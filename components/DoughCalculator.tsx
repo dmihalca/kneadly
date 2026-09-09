@@ -17,6 +17,7 @@ import { format } from "date-fns";
 
 type DoughResults = {
   earliest: Date | null;
+  target: Date | null;
   latest: Date | null;
   totalFlour: number;
   bigaFlour: number;
@@ -68,7 +69,7 @@ const presets = {
 
 /**
  * Rounds ingredient weights to the nearest whole gram.
- * Values below .5 round down; values .5 and above round up.
+ * Values below .5 round down; .5 and above round up.
  */
 function roundGrams(value: number): number {
   return Math.round(value);
@@ -78,12 +79,23 @@ function roundGrams(value: number): number {
 
 function autoYeastForBiga(hours: number, tempC: number): number {
   const base = 0.1;
+
+  /*
+   * 14h is the upper end of the 12–14h BIGA window.
+   * The target fermentation time is 13h.
+   */
   const timeFactor = 14 / hours;
+
+  /*
+   * Keep the existing temperature adjustment.
+   */
   const tempFactor = tempC / 22;
 
   const percent = base * timeFactor * tempFactor;
 
-  return Number(Math.min(Math.max(percent, 0.08), 0.12).toFixed(3));
+  return Number(
+    Math.min(Math.max(percent, 0.08), 0.12).toFixed(3)
+  );
 }
 
 /* ---------- Component ---------- */
@@ -98,7 +110,6 @@ export default function DoughCalculator() {
   const [saltPercent, setSaltPercent] = useState<number>(3);
   const [oilPercent, setOilPercent] = useState<number>(2);
 
-  const [fermentationHours, setFermentationHours] = useState<number>(14);
   const [roomTemp, setRoomTemp] = useState<number>(22);
 
   const [flour00, setFlour00] = useState<number>(90);
@@ -106,12 +117,24 @@ export default function DoughCalculator() {
   const [wholeFlour, setWholeFlour] = useState<number>(5);
   const [wholeGrain, setWholeGrain] = useState<number>(0);
 
-  const [results, setResults] = useState<DoughResults | null>(null);
+  const [results, setResults] =
+    useState<DoughResults | null>(null);
 
   const DOUGH_BALL_WEIGHT = 275;
   const BIGA_FLOUR = 300;
   const BIGA_HYDRATION = 0.45;
   const DMP_PERCENT = 0.01;
+
+  /*
+   * BIGA fermentation window:
+   *
+   * 14h = earliest start
+   * 13h = target / average
+   * 12h = latest start
+   */
+  const BIGA_EARLIEST_HOURS = 14;
+  const BIGA_TARGET_HOURS = 13;
+  const BIGA_LATEST_HOURS = 12;
 
   /* ---------- Apply preset ---------- */
 
@@ -126,19 +149,27 @@ export default function DoughCalculator() {
   /* ---------- Main calculation ---------- */
 
   const calculateAll = () => {
+    /*
+     * BIGA yeast is calculated from the 13h target.
+     * Temperature still affects the yeast percentage.
+     */
     const bigaYeastPercent = autoYeastForBiga(
-      fermentationHours,
+      BIGA_TARGET_HOURS,
       roomTemp
     );
 
     let earliest: Date | null = null;
+    let target: Date | null = null;
     let latest: Date | null = null;
 
     /* ---------- Calculate BIGA start window ---------- */
 
     if (date && time) {
-      const [year, month, day] = date.split("-").map(Number);
-      const [hours, minutes] = time.split(":").map(Number);
+      const [year, month, day] =
+        date.split("-").map(Number);
+
+      const [hours, minutes] =
+        time.split(":").map(Number);
 
       const finalDate = new Date(
         year,
@@ -150,27 +181,56 @@ export default function DoughCalculator() {
         0
       );
 
+      /*
+       * Earliest:
+       * Final dough time - 14 hours
+       */
       earliest = new Date(
-        finalDate.getTime() - 14 * 60 * 60 * 1000
+        finalDate.getTime() -
+          BIGA_EARLIEST_HOURS *
+            60 *
+            60 *
+            1000
       );
 
+      /*
+       * Target:
+       * Final dough time - 13 hours
+       */
+      target = new Date(
+        finalDate.getTime() -
+          BIGA_TARGET_HOURS *
+            60 *
+            60 *
+            1000
+      );
+
+      /*
+       * Latest:
+       * Final dough time - 12 hours
+       */
       latest = new Date(
-        finalDate.getTime() - 12 * 60 * 60 * 1000
+        finalDate.getTime() -
+          BIGA_LATEST_HOURS *
+            60 *
+            60 *
+            1000
       );
     }
 
     /* ---------- Dough calculations ---------- */
 
-    const totalDoughWeight = balls * DOUGH_BALL_WEIGHT;
+    const totalDoughWeight =
+      balls * DOUGH_BALL_WEIGHT;
 
     const totalFlour =
       650 * (totalDoughWeight / 1080);
 
     const blendTotal =
       flour00 +
-      breadFlour +
-      wholeFlour +
-      wholeGrain || 1;
+        breadFlour +
+        wholeFlour +
+        wholeGrain || 1;
 
     const flour00Grams = roundGrams(
       totalFlour * (flour00 / blendTotal)
@@ -188,6 +248,8 @@ export default function DoughCalculator() {
       totalFlour * (wholeGrain / blendTotal)
     );
 
+    /* ---------- BIGA ---------- */
+
     const bigaFlour = roundGrams(
       BIGA_FLOUR * (totalFlour / 650)
     );
@@ -198,6 +260,8 @@ export default function DoughCalculator() {
 
     const bigaYeast =
       bigaFlour * (bigaYeastPercent / 100);
+
+    /* ---------- Remaining ingredients ---------- */
 
     const remainingFlour = roundGrams(
       totalFlour - bigaFlour
@@ -224,8 +288,11 @@ export default function DoughCalculator() {
 
     const finalYeast = 0;
 
+    /* ---------- Store results ---------- */
+
     setResults({
       earliest,
+      target,
       latest,
       totalFlour,
       bigaFlour,
@@ -264,41 +331,60 @@ export default function DoughCalculator() {
             </Label>
 
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => applyPreset("neapolitan")}>
+              <Button
+                onClick={() =>
+                  applyPreset("neapolitan")
+                }
+              >
                 Neapolitan
               </Button>
 
-              <Button onClick={() => applyPreset("newYork")}>
+              <Button
+                onClick={() =>
+                  applyPreset("newYork")
+                }
+              >
                 New York
               </Button>
 
-              <Button onClick={() => applyPreset("roman")}>
+              <Button
+                onClick={() =>
+                  applyPreset("roman")
+                }
+              >
                 Roman
               </Button>
 
-              <Button onClick={() => applyPreset("focaccia")}>
+              <Button
+                onClick={() =>
+                  applyPreset("focaccia")
+                }
+              >
                 Focaccia
               </Button>
             </div>
           </div>
 
-          {/* AUTO YEAST */}
+          {/* BIGA SETTINGS */}
 
           <div className="space-y-2">
             <Label>
-              Biga Fermentation Time (hours)
+              Biga Fermentation Time
             </Label>
 
-            <Input
-              type="number"
-              value={fermentationHours}
-              min={1}
-              onChange={(e) =>
-                setFermentationHours(
-                  Number(e.target.value)
-                )
-              }
-            />
+            <div className="rounded-md border p-3 bg-muted/30">
+              <p className="text-sm">
+                Target:{" "}
+                <strong>
+                  {BIGA_TARGET_HOURS} hours
+                </strong>
+              </p>
+
+              <p className="text-sm text-muted-foreground">
+                Recommended window:{" "}
+                {BIGA_LATEST_HOURS}–{BIGA_EARLIEST_HOURS} hours
+              </p>
+            </div>
 
             <Label>
               Room Temperature (°C)
@@ -517,7 +603,7 @@ export default function DoughCalculator() {
                 </h3>
 
                 <div className="flex items-center justify-between">
-                  <span>Earliest</span>
+                  <span>Earliest (14h)</span>
 
                   <strong>
                     {results.earliest
@@ -530,7 +616,20 @@ export default function DoughCalculator() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span>Latest</span>
+                  <span>Target (13h)</span>
+
+                  <strong>
+                    {results.target
+                      ? format(
+                          results.target,
+                          "MMM d, yyyy @ HH:mm"
+                        )
+                      : "—"}
+                  </strong>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span>Latest (12h)</span>
 
                   <strong>
                     {results.latest
@@ -549,7 +648,7 @@ export default function DoughCalculator() {
 
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">
-                  Biga ({fermentationHours}h @ {roomTemp}°C)
+                  Biga (13h target @ {roomTemp}°C)
                 </h3>
 
                 <p>
