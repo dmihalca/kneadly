@@ -116,16 +116,21 @@ export default function DoughCalculator() {
     let latest: Date | null = null;
     let finalDate: Date | null = null;
 
-    if (date && time) {
-      const [hh, mm, ss] = time.split(":").map(Number);
-      finalDate = new Date(date);
-      finalDate.setHours(hh);
-      finalDate.setMinutes(mm);
-      finalDate.setSeconds(ss);
+if (date && time) {
+  const parts = time.split(":").map(Number);
+  const hh = parts[0] ?? 0;
+  const mm = parts[1] ?? 0;
+  const ss = parts[2] ?? 0;
 
-      earliest = new Date(finalDate.getTime() - 14 * 60 * 60 * 1000);
-      latest = new Date(finalDate.getTime() - 12 * 60 * 60 * 1000);
-    }
+  finalDate = new Date(date);
+  finalDate.setHours(hh);
+  finalDate.setMinutes(mm);
+  finalDate.setSeconds(ss);
+
+  earliest = new Date(finalDate.getTime() - 14 * 60 * 60 * 1000);
+  latest = new Date(finalDate.getTime() - 12 * 60 * 60 * 1000);
+}
+
 
     const totalDoughWeight = balls * DOUGH_BALL_WEIGHT;
     const totalFlour = 650 * (totalDoughWeight / 1080);
