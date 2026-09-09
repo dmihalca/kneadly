@@ -9,26 +9,8 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
-function PopoverTrigger({
-  asChild,
-  children,
-  ...props
-}: PopoverPrimitive.Trigger.Props & { asChild?: boolean }) {
-  if (asChild) {
-    // Render the child directly — do NOT clone, do NOT forward props
-    return (
-      <PopoverPrimitive.Trigger data-slot="popover-trigger" asChild>
-        {children}
-      </PopoverPrimitive.Trigger>
-    )
-  }
-
-  return (
-    <PopoverPrimitive.Trigger
-      data-slot="popover-trigger"
-      {...props}
-    />
-  )
+function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 }
 
 
