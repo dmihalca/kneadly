@@ -38,7 +38,7 @@ const presets = {
     hydration: 62.5,
     salt: 2.8,
     yeast: 0.1,
-    oil: 1.5,
+    oil: 3,
   },
   newYork: {
     hydration: 65,
