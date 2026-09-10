@@ -36,7 +36,7 @@ type DoughResults = {
 const presets = {
   neapolitan: {
     hydration: 62.5,
-    salt: 2.8,
+    salt: 3,
     yeast: 0.1,
     oil: 3,
   },
