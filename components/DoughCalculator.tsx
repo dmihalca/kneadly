@@ -183,7 +183,7 @@ export default function DoughCalculator() {
 
     const totalDoughWeight = balls * DOUGH_BALL_WEIGHT
 
-    const totalFlour = 650 * (totalDoughWeight / 1080)
+    const totalFlour = 640 * (totalDoughWeight / 1080)
 
     const blendTotal = flour00 + breadFlour + wholeFlour + wholeGrain || 1
 
@@ -197,7 +197,7 @@ export default function DoughCalculator() {
 
     /* ---------- BIGA ---------- */
 
-    const bigaFlour = roundGrams(BIGA_FLOUR * (totalFlour / 650))
+    const bigaFlour = roundGrams(BIGA_FLOUR * (totalFlour / 640))
 
     const bigaWater = roundGrams(bigaFlour * BIGA_HYDRATION)
 
