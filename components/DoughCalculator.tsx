@@ -32,11 +32,11 @@ const presets = {
     yeast: 0.2,
     oil: 3,
   },
-  focaccia: {
-    hydration: 80,
-    salt: 2,
-    yeast: 0.2,
-    oil: 8,
+  detroit: {
+    hydration: 72,
+    salt: 2.5,
+    yeast: 0.1,
+    oil: 5,
   },
 }
 
@@ -163,12 +163,12 @@ export default function DoughCalculator() {
 
   const [error, setError] = useState('')
 
-  const activeRecipe = presets[activePreset]
+  const activeStyleDough = presets[activePreset]
 
-  const hydration = activeRecipe.hydration
-  const saltPercent = activeRecipe.salt
-  const oilPercent = activeRecipe.oil
-  const yeastPercent = activeRecipe.yeast
+  const hydration = activeStyleDough.hydration
+  const saltPercent = activeStyleDough.salt
+  const oilPercent = activeStyleDough.oil
+  const yeastPercent = activeStyleDough.yeast
 
   /* ---------- Apply preset ---------- */
 
@@ -471,7 +471,7 @@ export default function DoughCalculator() {
 
                 <TabsTrigger value="roman">Roman</TabsTrigger>
 
-                <TabsTrigger value="focaccia">Focaccia</TabsTrigger>
+                <TabsTrigger value="detroit">Detroit</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -686,10 +686,10 @@ export default function DoughCalculator() {
             </div>
           </div>
 
-          {/* ACTIVE RECIPE */}
+          {/* ACTIVE STYLE DOUGH */}
 
           <div className="rounded-md border p-3 bg-muted/30">
-            <p className="text-sm font-medium">{presetDisplayName} recipe</p>
+            <p className="text-sm font-medium">{presetDisplayName} Style Dough</p>
 
             <div className="grid grid-cols-4 gap-2 mt-2 text-sm">
               <div>
