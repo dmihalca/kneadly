@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { RotateCcw, Wheat } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -102,6 +103,9 @@ function autoYeastForBiga(hours: number, tempC: number): number {
 }
 
 export default function DoughCalculator() {
+  const searchParams = useSearchParams()
+  const styleParam = searchParams.get('style')
+
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [balls, setBalls] = useState<number | null>(null)
@@ -120,17 +124,28 @@ export default function DoughCalculator() {
   const [error, setError] = useState('')
   const [showAddStyleMessage, setShowAddStyleMessage] = useState(false)
 
+  // Sync state when sidebar URL param changes (e.g. ?style=new-york or ?style=neapolitan)
+  useEffect(() => {
+    if (!styleParam) return
+
+    let matchedPreset: PresetName | null = null
+    if (styleParam === 'neapolitan') matchedPreset = 'neapolitan'
+    else if (styleParam === 'new-york' || styleParam === 'newYork') matchedPreset = 'newYork'
+    else if (styleParam === 'roman') matchedPreset = 'roman'
+    else if (styleParam === 'detroit') matchedPreset = 'detroit'
+
+    if (matchedPreset) {
+      setActivePreset(matchedPreset)
+      setResults(null)
+      setError('')
+    }
+  }, [styleParam])
+
   const activeStyleDough = presets[activePreset]
   const hydration = activeStyleDough.hydration
   const saltPercent = activeStyleDough.salt
   const oilPercent = activeStyleDough.oil
   const yeastPercent = activeStyleDough.yeast
-
-  const applyPreset = (name: PresetName) => {
-    setActivePreset(name)
-    setResults(null)
-    setError('')
-  }
 
   const calculateAll = () => {
     setError('')

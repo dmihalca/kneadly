@@ -1,76 +1,61 @@
 'use client'
 
 import * as React from 'react'
-import { LayoutDashboard, Pizza, Settings, HelpCircle, Search, Wheat } from 'lucide-react'
+import { LayoutDashboard, Pizza, Wheat } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 
 import { NavMain } from '@/components/nav-main'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavUser } from '@/components/nav-user'
+
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-const data = {
-  user: {
-    name: 'Danut',
-    email: 'danut@kneadly.app',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  navMain: [
-    {
-      title: 'Dashboard',
-      url: '#',
-      icon: <LayoutDashboard className="size-4" />,
-    },
-    {
-      title: 'Neapolitan',
-      url: '#',
-      icon: <Pizza className="size-4" />,
-    },
-    {
-      title: 'New York',
-      url: '#',
-      icon: <Pizza className="size-4" />,
-    },
-    {
-      title: 'Roman',
-      url: '#',
-      icon: <Pizza className="size-4" />,
-    },
-    {
-      title: 'Detroit',
-      url: '#',
-      icon: <Pizza className="size-4" />,
-    },
-  ],
-  navSecondary: [
-    {
-      title: 'Settings',
-      url: '#',
-      icon: <Settings className="size-4" />,
-    },
-    {
-      title: 'Get Help',
-      url: '#',
-      icon: <HelpCircle className="size-4" />,
-    },
-    {
-      title: 'Search',
-      url: '#',
-      icon: <Search className="size-4" />,
-    },
-  ],
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const searchParams = useSearchParams()
+  const currentStyle = searchParams.get('style')
+
+  const data = {
+    navMain: [
+      {
+        title: 'Dashboard',
+        url: '/dashboard',
+        icon: <LayoutDashboard className="size-4" />,
+        isActive: !currentStyle,
+      },
+      {
+        title: 'Neapolitan',
+        url: '/dashboard?style=neapolitan',
+        icon: <Pizza className="size-4" />,
+        isActive: currentStyle === 'neapolitan',
+      },
+      {
+        title: 'New York',
+        url: '/dashboard?style=new-york',
+        icon: <Pizza className="size-4" />,
+        isActive: currentStyle === 'new-york',
+      },
+      {
+        title: 'Roman',
+        url: '/dashboard?style=roman',
+        icon: <Pizza className="size-4" />,
+        isActive: currentStyle === 'roman',
+      },
+      {
+        title: 'Detroit',
+        url: '/dashboard?style=detroit',
+        icon: <Pizza className="size-4" />,
+        isActive: currentStyle === 'detroit',
+      },
+    ],
+  }
+
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -79,7 +64,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Wheat className="size-4" />
                 </div>
-                <span className="text-base font-semibold">Kneadly</span>
+                <span className="text-base font-semibold">Dough Styles</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -88,12 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
     </Sidebar>
   )
 }
