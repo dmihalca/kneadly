@@ -4,7 +4,7 @@ import DoughCalculator from '@/components/dough-calculator'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Suspense } from 'react'
 
-// Force dynamic rendering so Next.js does not attempt static pre-rendering with useSearchParams
+// Force dynamic rendering so Next.js handles useSearchParams cleanly at runtime
 export const dynamic = 'force-dynamic'
 
 export default function Page() {
