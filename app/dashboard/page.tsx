@@ -1,30 +1,15 @@
-import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
 import DoughCalculator from '@/components/dough-calculator'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { Suspense } from 'react'
-
-// Forces runtime rendering to handle useSearchParams without prerender errors
-export const dynamic = 'force-dynamic'
 
 export default function Page() {
   return (
-    <SidebarProvider>
-      <Suspense fallback={null}>
-        <AppSidebar />
-      </Suspense>
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <Suspense fallback={<div>Loading calculator...</div>}>
-                <DoughCalculator />
-              </Suspense>
-            </div>
-          </div>
+    <div className="flex flex-1 flex-col min-w-0">
+      <SiteHeader />
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          <DoughCalculator />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   )
 }

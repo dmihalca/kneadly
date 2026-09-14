@@ -6,14 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export default function Page() {
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col min-w-0">
       <SiteHeader />
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <Suspense fallback={<div className="p-6">Loading calculator...</div>}>
-            <DoughCalculator />
-          </Suspense>
-        </div>
+      <div className="flex flex-1 flex-col p-4 md:p-6">
+        <DoughCalculator />
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { RotateCcw, Wheat } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
 import { Input } from '@/components/ui/input'
@@ -15,30 +15,10 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 /* ---------- Presets ---------- */
 
 const presets = {
-  neapolitan: {
-    hydration: 62.5,
-    salt: 3,
-    yeast: 0.1,
-    oil: 3,
-  },
-  newYork: {
-    hydration: 65,
-    salt: 2.2,
-    yeast: 0.3,
-    oil: 2,
-  },
-  roman: {
-    hydration: 75,
-    salt: 2,
-    yeast: 0.2,
-    oil: 3,
-  },
-  detroit: {
-    hydration: 72,
-    salt: 2.5,
-    yeast: 0.1,
-    oil: 5,
-  },
+  neapolitan: { hydration: 62.5, salt: 3, yeast: 0.1, oil: 3 },
+  newYork: { hydration: 65, salt: 2.2, yeast: 0.3, oil: 2 },
+  roman: { hydration: 75, salt: 2, yeast: 0.2, oil: 3 },
+  detroit: { hydration: 72, salt: 2.5, yeast: 0.1, oil: 5 },
 }
 
 type PresetName = keyof typeof presets
@@ -91,14 +71,11 @@ function roundGrams(value: number): number {
   return Math.round(value)
 }
 
-/* ---------- Auto yeast for BIGA ONLY ---------- */
-
 function autoYeastForBiga(hours: number, tempC: number): number {
   const base = 0.1
   const timeFactor = 14 / hours
   const tempFactor = tempC / 22
   const percent = base * timeFactor * tempFactor
-
   return Number(Math.min(Math.max(percent, 0.08), 0.12).toFixed(3))
 }
 
@@ -106,25 +83,22 @@ export default function DoughCalculator() {
   const searchParams = useSearchParams()
   const styleParam = searchParams.get('style')
 
+  const [activePreset, setActivePreset] = useState<PresetName>('neapolitan')
+
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [balls, setBalls] = useState<number | null>(null)
   const [doughBallWeight, setDoughBallWeight] = useState<number | null>(null)
   const [preferment, setPreferment] = useState<'biga' | 'poolish'>('biga')
-
-  // These remain manual inputs and are intentionally NOT controlled by styles.
   const [roomTemp, setRoomTemp] = useState<number | null>(null)
   const [flour00, setFlour00] = useState<number | null>(null)
   const [breadFlour, setBreadFlour] = useState<number | null>(null)
   const [wholeFlour, setWholeFlour] = useState<number | null>(null)
   const [wholeGrain, setWholeGrain] = useState<number | null>(null)
 
-  const [activePreset, setActivePreset] = useState<PresetName>('neapolitan')
   const [results, setResults] = useState<DoughResults | null>(null)
   const [error, setError] = useState('')
-  const [showAddStyleMessage, setShowAddStyleMessage] = useState(false)
 
-  // Sync state when sidebar URL param changes (e.g. ?style=new-york or ?style=neapolitan)
   useEffect(() => {
     if (!styleParam) return
 
@@ -198,7 +172,7 @@ export default function DoughCalculator() {
 
     if (prefermentFlour > flour00Grams) {
       setError(
-        `Not enough 00 flour for the ${preferment === 'biga' ? 'BIGA' : 'Poolish'}. Your blend provides ${flour00Grams} g of 00 flour, but the 50% preferment requires ${prefermentFlour} g. Increase your 00 flour percentage.`
+        `Not enough 00 flour for the ${preferment === 'biga' ? 'BIGA' : 'Poolish'}. Your blend provides ${flour00Grams} g of 00 flour, but the 50% preferment requires ${prefermentFlour} g.`
       )
       return
     }
@@ -209,10 +183,6 @@ export default function DoughCalculator() {
       preferment === 'biga' ? autoYeastForBiga(BIGA_TARGET_HOURS, roomTemp) : 0
     const prefermentYeast =
       preferment === 'biga' ? prefermentFlour * (prefermentYeastPercent / 100) : 0
-
-    const bigaFlour = prefermentFlour
-    const bigaWater = prefermentWater
-    const bigaYeast = prefermentYeast
 
     const remainingFlour = roundGrams(totalFlour - prefermentFlour)
     const remaining00Flour = Math.max(0, flour00Grams - prefermentFlour)
@@ -251,9 +221,9 @@ export default function DoughCalculator() {
       prefermentFlour,
       prefermentWater,
       prefermentYeast,
-      bigaFlour,
-      bigaWater,
-      bigaYeast,
+      bigaFlour: prefermentFlour,
+      bigaWater: prefermentWater,
+      bigaYeast: prefermentYeast,
       remainingFlour,
       remaining00Flour,
       remainingBreadFlour,
@@ -314,13 +284,12 @@ export default function DoughCalculator() {
     <div className="px-4 lg:px-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Dough calculator</p>
+          <p className="text-sm font-medium text-muted-foreground">Dough Calculator</p>
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-            {presetDisplayName} dough
+            {presetDisplayName} Dough
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Enter your actual room temperature and flour blend. Style presets only control the
-            recipe values.
+            Configure your batch parameters using standard form fields.
           </p>
         </div>
 
@@ -330,21 +299,6 @@ export default function DoughCalculator() {
         </Button>
       </div>
 
-      {showAddStyleMessage && (
-        <div className="mb-6 flex items-start justify-between rounded-lg border bg-muted/40 p-4 text-sm">
-          <div>
-            <p className="font-medium">Custom dough styles</p>
-            <p className="mt-1 text-muted-foreground">
-              The four built-in styles are ready. The + button is wired for the custom-style editor
-              and can be extended next without changing the calculator formulas.
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => setShowAddStyleMessage(false)}>
-            ×
-          </Button>
-        </div>
-      )}
-
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader>
@@ -352,52 +306,47 @@ export default function DoughCalculator() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-medium">{presetDisplayName} Style Dough</p>
-                  <p className="text-sm text-muted-foreground">
-                    Style recipe values are preset. Your room temperature and flour blend remain
-                    manual.
-                  </p>
-                </div>
-                <Wheat className="hidden size-5 text-muted-foreground sm:block" />
-              </div>
-
+              <p className="font-medium">{presetDisplayName} Style Recipe</p>
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div>
+                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
                   <span className="text-xs text-muted-foreground">Hydration</span>
                   <p className="font-medium">{hydration}%</p>
                 </div>
-                <div>
+                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
                   <span className="text-xs text-muted-foreground">Salt</span>
                   <p className="font-medium">{saltPercent}%</p>
                 </div>
-                <div>
+                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
                   <span className="text-xs text-muted-foreground">Oil</span>
                   <p className="font-medium">{oilPercent}%</p>
                 </div>
-                <div>
+                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
                   <span className="text-xs text-muted-foreground">Yeast</span>
                   <p className="font-medium">{yeastPercent}%</p>
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Number of dough balls</Label>
+                <Label htmlFor="balls">Number of Dough Balls</Label>
                 <Input
+                  id="balls"
                   type="number"
                   value={balls ?? ''}
                   min={1}
                   placeholder="e.g. 4"
                   onChange={e => setBalls(e.target.value === '' ? null : Number(e.target.value))}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Total quantity of individual dough portions.
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Dough ball weight (g)</Label>
+                <Label htmlFor="ballWeight">Dough Ball Weight (g)</Label>
                 <Input
+                  id="ballWeight"
                   type="number"
                   value={doughBallWeight ?? ''}
                   min={1}
@@ -406,12 +355,15 @@ export default function DoughCalculator() {
                     setDoughBallWeight(e.target.value === '' ? null : Number(e.target.value))
                   }
                 />
+                <p className="text-xs text-muted-foreground">
+                  Standard target weight per individual ball.
+                </p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <Label>Preferment</Label>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Preferment Type</Label>
                 <Tabs
                   value={preferment}
                   onValueChange={value => {
@@ -421,77 +373,116 @@ export default function DoughCalculator() {
                       setError('')
                     }
                   }}
-                  className="mt-2"
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="biga">BIGA</TabsTrigger>
+                    <TabsTrigger value="biga">Biga</TabsTrigger>
                     <TabsTrigger value="poolish">Poolish</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
 
               <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="font-medium">{preferment === 'biga' ? 'BIGA' : 'Poolish'}</p>
+                <p className="font-medium capitalize">{preferment}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Uses 50% of total flour with 00 flour only.
+                  Uses 50% of total flour with 00 flour only. Hydration:{' '}
+                  {preferment === 'biga' ? '45%' : '100%'}.
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Hydration: {preferment === 'biga' ? '45%' : '100%'}
-                </p>
-                <p className="mt-3 text-sm">
-                  Target: <strong>{BIGA_TARGET_HOURS} hours</strong>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Recommended window: {BIGA_LATEST_HOURS}–{BIGA_EARLIEST_HOURS} hours
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Target window: {BIGA_LATEST_HOURS}–{BIGA_EARLIEST_HOURS} hours.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Room Temperature (°C)</Label>
+                <Label htmlFor="roomTemp">Room Temperature (°C)</Label>
                 <Input
+                  id="roomTemp"
                   type="number"
                   value={roomTemp ?? ''}
                   placeholder="e.g. 22"
                   onChange={e => setRoomTemp(e.target.value === '' ? null : Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Used directly by the BIGA yeast calculation.
+                  Used directly by the Biga yeast calculation.
                 </p>
               </div>
             </div>
 
             <Separator />
 
-            <div className="space-y-3">
-              <Label>Flour Blend (percentages)</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  ['00 Flour', flour00, setFlour00, 'e.g. 90'],
-                  ['Bread Flour', breadFlour, setBreadFlour, 'e.g. 5'],
-                  ['Whole Wheat', wholeFlour, setWholeFlour, 'e.g. 5'],
-                  ['Whole Grain', wholeGrain, setWholeGrain, 'e.g. 0'],
-                ].map(([label, value, setter, placeholder]) => (
-                  <div key={String(label)} className="space-y-2">
-                    <Label>{String(label)}</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-sm font-medium text-muted-foreground">
-                        %
-                      </span>
-                      <Input
-                        type="number"
-                        value={(value as number | null) ?? ''}
-                        placeholder={String(placeholder)}
-                        min={0}
-                        onChange={e =>
-                          (setter as (value: number | null) => void)(
-                            e.target.value === '' ? null : Number(e.target.value)
-                          )
-                        }
-                        className="pl-8"
-                      />
-                    </div>
+            <div className="space-y-4">
+              <Label>Flour Blend (Percentages)</Label>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="flour00">00 Flour</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">%</span>
+                    <Input
+                      id="flour00"
+                      type="number"
+                      value={flour00 ?? ''}
+                      placeholder="e.g. 90"
+                      min={0}
+                      className="pl-8"
+                      onChange={e =>
+                        setFlour00(e.target.value === '' ? null : Number(e.target.value))
+                      }
+                    />
                   </div>
-                ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="breadFlour">Bread Flour</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">%</span>
+                    <Input
+                      id="breadFlour"
+                      type="number"
+                      value={breadFlour ?? ''}
+                      placeholder="e.g. 5"
+                      min={0}
+                      className="pl-8"
+                      onChange={e =>
+                        setBreadFlour(e.target.value === '' ? null : Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="wholeFlour">Whole Wheat</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">%</span>
+                    <Input
+                      id="wholeFlour"
+                      type="number"
+                      value={wholeFlour ?? ''}
+                      placeholder="e.g. 5"
+                      min={0}
+                      className="pl-8"
+                      onChange={e =>
+                        setWholeFlour(e.target.value === '' ? null : Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="wholeGrain">Whole Grain</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">%</span>
+                    <Input
+                      id="wholeGrain"
+                      type="number"
+                      value={wholeGrain ?? ''}
+                      placeholder="e.g. 0"
+                      min={0}
+                      className="pl-8"
+                      onChange={e =>
+                        setWholeGrain(e.target.value === '' ? null : Number(e.target.value))
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -499,23 +490,28 @@ export default function DoughCalculator() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Date</Label>
+                <Label htmlFor="date">Date</Label>
                 <Input
+                  id="date"
                   type="date"
                   value={date}
                   onChange={e => setDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                 />
+                <p className="text-xs text-muted-foreground">Target baking completion date.</p>
               </div>
+
               <div className="space-y-2">
-                <Label>Time</Label>
+                <Label htmlFor="time">Time</Label>
                 <Input
+                  id="time"
                   type="time"
                   value={time}
                   onChange={e => setTime(e.target.value)}
                   disabled={!date}
                   className={!date ? 'opacity-50' : ''}
                 />
+                <p className="text-xs text-muted-foreground">Target baking completion time.</p>
               </div>
             </div>
 
@@ -537,7 +533,7 @@ export default function DoughCalculator() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recipe overview</CardTitle>
+              <CardTitle>Recipe Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
@@ -564,7 +560,7 @@ export default function DoughCalculator() {
           {results && (
             <Card>
               <CardHeader>
-                <CardTitle>BIGA start window</CardTitle>
+                <CardTitle>Biga Start Window</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between gap-4 text-sm">
@@ -595,14 +591,14 @@ export default function DoughCalculator() {
         <section className="mt-10 space-y-6">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Results</p>
-            <h2 className="text-2xl font-bold tracking-tight">Calculated dough</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Calculated Dough Specs</h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total dough
+                  Total Dough
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -616,7 +612,7 @@ export default function DoughCalculator() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total flour
+                  Total Flour
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -628,7 +624,7 @@ export default function DoughCalculator() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total water
+                  Total Water
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -640,140 +636,12 @@ export default function DoughCalculator() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Room temp
+                  Room Temp
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{roomTemp}°C</p>
-                <p className="text-xs text-muted-foreground">Used for BIGA yeast</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>{preferment === 'biga' ? 'BIGA' : 'Poolish'}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between gap-4 text-sm">
-                  <span>Flour</span>
-                  <strong>{results.prefermentFlour} g</strong>
-                </div>
-                <div className="flex justify-between gap-4 text-sm">
-                  <span>Water</span>
-                  <strong>{results.prefermentWater} g</strong>
-                </div>
-                {preferment === 'biga' && (
-                  <div className="flex justify-between gap-4 text-sm">
-                    <span>BIGA yeast</span>
-                    <strong>{results.prefermentYeast.toFixed(3)} g</strong>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Flour breakdown</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {flour00 !== null && flour00 > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>00 Flour</span>
-                    <strong>{results.flour00Grams} g</strong>
-                  </div>
-                )}
-                {breadFlour !== null && breadFlour > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Bread Flour</span>
-                    <strong>{results.breadFlourGrams} g</strong>
-                  </div>
-                )}
-                {wholeFlour !== null && wholeFlour > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Whole Wheat</span>
-                    <strong>{results.wholeFlourGrams} g</strong>
-                  </div>
-                )}
-                {wholeGrain !== null && wholeGrain > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Whole Grain</span>
-                    <strong>{results.wholeGrainGrams} g</strong>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Remaining ingredients</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {flour00 !== null && flour00 > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Remaining 00 Flour</span>
-                    <strong>{results.remaining00Flour} g</strong>
-                  </div>
-                )}
-                {breadFlour !== null && breadFlour > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Remaining Bread Flour</span>
-                    <strong>{results.remainingBreadFlour} g</strong>
-                  </div>
-                )}
-                {wholeFlour !== null && wholeFlour > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Remaining Whole Wheat</span>
-                    <strong>{results.remainingWholeFlour} g</strong>
-                  </div>
-                )}
-                {wholeGrain !== null && wholeGrain > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Remaining Whole Grain</span>
-                    <strong>{results.remainingWholeGrain} g</strong>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span>Remaining water</span>
-                  <strong>{results.remainingWater} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Salt</span>
-                  <strong>{results.salt} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Diastatic Malt Powder</span>
-                  <strong>{results.dmp} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Olive oil</span>
-                  <strong>{results.oil} g</strong>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Totals</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Total dough weight</span>
-                  <strong>{results.totalDoughWeight} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Total flour</span>
-                  <strong>{results.totalFlour} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Total water</span>
-                  <strong>{results.totalWater} g</strong>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Final yeast</span>
-                  <strong>{results.finalYeast} g</strong>
-                </div>
+                <p className="text-xs text-muted-foreground">Used for Biga yeast</p>
               </CardContent>
             </Card>
           </div>
