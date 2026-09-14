@@ -1,11 +1,5 @@
-"use client";
+import DoughCalculator from '@/components/dough-calculator'
 
-import DoughCalculator from "@/components/DoughCalculator";
-
-export default function Page() {
-  return (
-    <main className="p-10">
-      <DoughCalculator />
-    </main>
-  );
+export default function HomePage() {
+  return <DoughCalculator />
 }

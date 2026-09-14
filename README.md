@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Doughy Dashboard
 
-## Getting Started
+This package revamps the existing Doughy calculator into a dashboard-style app with a left navigation sidebar while preserving the calculator formulas and the four built-in dough styles.
 
-First, run the development server:
+## Files
+
+- `components/DoughCalculator.tsx` — dashboard layout + existing calculator logic
+- `components/app-sidebar.tsx` — Doughy sidebar with Active Doughs and the four styles
+- `app/page.tsx` — root page
+- `app/dashboard/page.tsx` — `/dashboard` route
+
+## Required shadcn components
+
+The existing calculator already uses:
+
+- Button
+- Card
+- Input
+- Label
+- Separator
+- Tabs
+
+Install the shadcn sidebar if you want to use the official sidebar elsewhere in the project:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx shadcn@latest add sidebar
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This Doughy implementation intentionally keeps its sidebar self-contained so it does not require the generated `components/ui/sidebar.tsx` file.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Icons
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Install Lucide if it is not already present:
 
-## Learn More
+```bash
+npm install lucide-react
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Existing dependencies
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The calculator uses `date-fns`, which your current project already has:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install date-fns
+```
 
-## Deploy on Vercel
+## Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Room temperature remains a manual input and is never changed when switching dough styles.
+- Flour blend percentages remain manual inputs and are never changed when switching dough styles.
+- The four existing styles remain Neapolitan, New York, Roman, and Detroit.
+- The existing BIGA calculation continues to use the entered room temperature.
+- The + button is wired to a placeholder message for now; a real custom dough-style editor can be added next.
