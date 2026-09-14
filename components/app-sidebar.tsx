@@ -1,86 +1,99 @@
 'use client'
 
-import { Plus, Wheat } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import * as React from 'react'
+import { LayoutDashboard, Pizza, Settings, HelpCircle, Search, Wheat } from 'lucide-react'
 
-type PresetName = 'neapolitan' | 'newYork' | 'roman' | 'detroit'
+import { NavMain } from '@/components/nav-main'
+import { NavSecondary } from '@/components/nav-secondary'
+import { NavUser } from '@/components/nav-user'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar'
 
-type AppSidebarProps = {
-  activePreset: PresetName
-  onPresetChange: (preset: PresetName) => void
-  onAddStyle?: () => void
+const data = {
+  user: {
+    name: 'Danut',
+    email: 'danut@kneadly.app',
+    avatar: '/avatars/shadcn.jpg',
+  },
+  navMain: [
+    {
+      title: 'Dashboard',
+      url: '#',
+      icon: <LayoutDashboard className="size-4" />,
+    },
+    {
+      title: 'Neapolitan',
+      url: '#',
+      icon: <Pizza className="size-4" />,
+    },
+    {
+      title: 'New York',
+      url: '#',
+      icon: <Pizza className="size-4" />,
+    },
+    {
+      title: 'Roman',
+      url: '#',
+      icon: <Pizza className="size-4" />,
+    },
+    {
+      title: 'Detroit',
+      url: '#',
+      icon: <Pizza className="size-4" />,
+    },
+  ],
+  navSecondary: [
+    {
+      title: 'Settings',
+      url: '#',
+      icon: <Settings className="size-4" />,
+    },
+    {
+      title: 'Get Help',
+      url: '#',
+      icon: <HelpCircle className="size-4" />,
+    },
+    {
+      title: 'Search',
+      url: '#',
+      icon: <Search className="size-4" />,
+    },
+  ],
 }
 
-const styles: { id: PresetName; label: string }[] = [
-  { id: 'neapolitan', label: 'Neapolitan' },
-  { id: 'newYork', label: 'New York' },
-  { id: 'roman', label: 'Roman' },
-  { id: 'detroit', label: 'Detroit' },
-]
-
-export function AppSidebar({ activePreset, onPresetChange, onAddStyle }: AppSidebarProps) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:min-h-svh md:flex-col">
-      <div className="flex h-16 items-center border-b px-5">
-        <div className="flex items-center gap-2 font-semibold tracking-tight">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wheat className="size-4" />
-          </div>
-          <span className="text-lg">Kneadly</span>
-        </div>
-      </div>
+    <Sidebar collapsible="offcanvas" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Wheat className="size-4" />
+                </div>
+                <span className="text-base font-semibold">Kneadly</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      <div className="flex-1 overflow-y-auto px-3 py-6">
-        <div className="mb-5 px-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Active Doughs
-          </p>
-        </div>
+      <SidebarContent>
+        <NavMain items={data.navMain} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" />
+      </SidebarContent>
 
-        <div>
-          <div className="flex items-center justify-between px-2 pb-2">
-            <p className="text-sm font-medium">Dough Styles</p>
-            <button
-              type="button"
-              onClick={onAddStyle}
-              className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              aria-label="Add dough style"
-              title="Add dough style"
-            >
-              <Plus className="size-4" />
-            </button>
-          </div>
-
-          <nav className="space-y-1" aria-label="Dough styles">
-            {styles.map(style => {
-              const active = activePreset === style.id
-
-              return (
-                <button
-                  key={style.id}
-                  type="button"
-                  onClick={() => onPresetChange(style.id)}
-                  className={cn(
-                    'flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
-                    active
-                      ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
-                  )}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <span
-                    className={cn(
-                      'mr-3 size-1.5 rounded-full',
-                      active ? 'bg-primary' : 'bg-transparent'
-                    )}
-                  />
-                  {style.label}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
-    </aside>
+      <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter>
+    </Sidebar>
   )
 }
