@@ -4,10 +4,15 @@ import DoughCalculator from '@/components/dough-calculator'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Suspense } from 'react'
 
+// Force dynamic rendering so Next.js does not attempt static pre-rendering with useSearchParams
+export const dynamic = 'force-dynamic'
+
 export default function Page() {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <Suspense fallback={null}>
+        <AppSidebar />
+      </Suspense>
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
