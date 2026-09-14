@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { Suspense } from 'react'
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' })
 const notoSans = Noto_Sans({ subsets: ['latin'], variable: '--font-sans' })
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col">
         <SidebarProvider>
-          <AppSidebar />
+          <Suspense fallback={null}>
+            <AppSidebar />
+          </Suspense>
           <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
       </body>
