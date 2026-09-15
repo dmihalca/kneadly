@@ -47,6 +47,7 @@ interface ActiveDough {
     finalWater?: number
     salt?: number
     yeast?: number
+    prefermentYeast?: number
     oil?: number
     dmp?: number
     [key: string]: any
@@ -87,7 +88,6 @@ export default function ActiveDoughsPage() {
     const updated = activeDoughs.map(dough => {
       if (dough.id === id) {
         const updatedDough = { ...dough, stage: nextStage }
-        // Set countdown targets when transitioning into respective stages
         if (nextStage === 'bulk' && !updatedDough.bulkReadyAt) {
           updatedDough.bulkReadyAt = addHours(now, 48).toISOString()
         } else if (nextStage === 'ball_ferment' && !updatedDough.ballFermentReadyAt) {
@@ -153,6 +153,14 @@ export default function ActiveDoughsPage() {
             const prefHydration =
               res.prefermentHydration || (prefFlour ? Math.round((prefWater / prefFlour) * 100) : 0)
 
+            // Look for yeast in different possible keys stored from the calculator
+            const yeastAmount =
+              res.prefermentYeast !== undefined
+                ? res.prefermentYeast
+                : res.yeast !== undefined
+                  ? res.yeast
+                  : 0
+
             const finalFlour =
               res.finalFlour !== undefined ? res.finalFlour : res.totalFlour - prefFlour
             const finalWater =
@@ -201,7 +209,7 @@ export default function ActiveDoughsPage() {
                             : 'text-muted-foreground'
                         }
                       >
-                        1. Pref
+                        1. Preferment
                       </span>
                       <span>→</span>
                       <span
@@ -257,6 +265,7 @@ export default function ActiveDoughsPage() {
 
                     {/* Dynamic Content Area */}
                     <div>
+                      {/* Step 1: Preferment Breakdown with robust yeast detection */}
                       {currentStage === 'preferment' && dough.preferment !== 'none' && (
                         <div className="text-xs space-y-1.5 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <p className="font-semibold text-foreground flex items-center gap-1">
@@ -274,10 +283,17 @@ export default function ActiveDoughsPage() {
                               <span className="font-medium text-foreground">{prefWater} g</span>{' '}
                               <span className="text-[10px]">({prefHydration}% hydration)</span>
                             </p>
+                            {yeastAmount > 0 && (
+                              <p className="col-span-2">
+                                Yeast:{' '}
+                                <span className="font-medium text-foreground">
+                                  {Number(yeastAmount).toFixed(2)} g
+                                </span>
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
-
                       {currentStage === 'final_dough' && (
                         <div className="text-xs space-y-1.5 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <p className="font-semibold text-foreground flex items-center gap-1">
@@ -299,12 +315,17 @@ export default function ActiveDoughsPage() {
                                 <span className="font-medium text-foreground">{res.salt} g</span>
                               </p>
                             )}
-                            {res.yeast !== undefined && res.yeast > 0 && (
-                              <p>
-                                Yeast:{' '}
-                                <span className="font-medium text-foreground">{res.yeast} g</span>
-                              </p>
-                            )}
+                            {/* ONLY show yeast here if there is NO preferment (direct dough) */}
+                            {dough.preferment === 'none' &&
+                              res.yeast !== undefined &&
+                              res.yeast > 0 && (
+                                <p>
+                                  Yeast:{' '}
+                                  <span className="font-medium text-foreground">
+                                    {Number(res.yeast).toFixed(2)} g
+                                  </span>
+                                </p>
+                              )}
                             {res.oil !== undefined && res.oil > 0 && (
                               <p>
                                 Oil:{' '}
@@ -344,14 +365,22 @@ export default function ActiveDoughsPage() {
                               </span>
                               <span>Peak Bulk</span>
                             </div>
-                            <div className="h-10 w-full bg-background rounded border flex items-end px-1 gap-1">
-                              {[20, 35, 50, 70, 90, 100, 85, 60].map((height, i) => (
-                                <div
-                                  key={i}
-                                  style={{ height: `${height}%` }}
-                                  className="flex-1 bg-primary/40 hover:bg-primary rounded-t transition-all"
-                                />
-                              ))}
+                            <div className="h-10 w-full bg-background rounded border flex items-end px-1 gap-0.5">
+                              {[6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15].map(
+                                (height, i) => (
+                                  <div
+                                    key={i}
+                                    style={{ height: `${height}%` }}
+                                    className="
+        flex-1 
+        rounded-t 
+        bg-gradient-to-t from-primary/30 to-primary/60 
+        animate-[pulse_4s_ease-in-out_infinite] 
+        transition-all
+      "
+                                  />
+                                )
+                              )}
                             </div>
                           </div>
                         </div>

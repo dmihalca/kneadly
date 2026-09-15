@@ -34,6 +34,7 @@ type DoughResults = {
   prefermentFlour: number
   prefermentWater: number
   prefermentYeast: number
+  yeast: number // Added duplicate key for broad compatibility
   bigaFlour: number
   bigaWater: number
   bigaYeast: number
@@ -78,7 +79,15 @@ function autoYeastForBiga(hours: number, tempC: number): number {
   const timeFactor = 14 / hours
   const tempFactor = tempC / 22
   const percent = base * timeFactor * tempFactor
-  return Number(Math.min(Math.max(percent, 0.08), 0.12).toFixed(3))
+  return Number(Math.min(Math.max(percent, 0.08), 0.12).toFixed(2))
+}
+
+function autoYeastForPoolish(hours: number, tempC: number): number {
+  const base = 0.15
+  const timeFactor = 12 / hours
+  const tempFactor = tempC / 22
+  const percent = base * timeFactor * tempFactor
+  return Number(Math.min(Math.max(percent, 0.1), 0.3).toFixed(2))
 }
 
 export default function DoughCalculator() {
@@ -181,10 +190,16 @@ export default function DoughCalculator() {
 
     const prefermentHydration = preferment === 'biga' ? BIGA_HYDRATION : POOLISH_HYDRATION
     const prefermentWater = roundGrams(prefermentFlour * prefermentHydration)
+
+    // Dynamic yeast calculation based on preferment type
     const prefermentYeastPercent =
-      preferment === 'biga' ? autoYeastForBiga(BIGA_TARGET_HOURS, roomTemp) : 0
-    const prefermentYeast =
-      preferment === 'biga' ? prefermentFlour * (prefermentYeastPercent / 100) : 0
+      preferment === 'biga'
+        ? autoYeastForBiga(BIGA_TARGET_HOURS, roomTemp)
+        : autoYeastForPoolish(16, roomTemp) // Assuming standard 16h poolish
+
+    const prefermentYeastValue = Number(
+      (prefermentFlour * (prefermentYeastPercent / 100)).toFixed(2)
+    )
 
     const remainingFlour = roundGrams(totalFlour - prefermentFlour)
     const remaining00Flour = Math.max(0, flour00Grams - prefermentFlour)
@@ -222,10 +237,11 @@ export default function DoughCalculator() {
       totalWater,
       prefermentFlour,
       prefermentWater,
-      prefermentYeast,
+      prefermentYeast: prefermentYeastValue,
+      yeast: prefermentYeastValue,
+      bigaYeast: prefermentYeastValue,
       bigaFlour: prefermentFlour,
       bigaWater: prefermentWater,
-      bigaYeast: prefermentYeast,
       remainingFlour,
       remaining00Flour,
       remainingBreadFlour,
@@ -268,9 +284,9 @@ export default function DoughCalculator() {
     const newActiveDough = {
       id: Date.now().toString(),
       preset: presetDisplayName,
-      preferment, // e.g., 'biga', 'poolish', etc.
+      preferment,
       roomTemp,
-      results, // Must include: totalFlour, totalWater, prefermentFlour, prefermentWater, prefermentPercentage, prefermentHydration, finalFlour, finalWater, salt, yeast, oil, dmp, etc.
+      results,
       startedAt: new Date().toISOString(),
       stage: 'preferment' as DoughStage,
     }
@@ -301,7 +317,7 @@ export default function DoughCalculator() {
   }
 
   return (
-    <div className="px-4 lg:px-6">
+    <div className="px-4 lg:px-6 pb-12 space-y-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-muted-foreground">Dough Calculator</p>
@@ -512,7 +528,6 @@ export default function DoughCalculator() {
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <div className="relative flex items-center">
-                  {/* Lucide Icon on the Left */}
                   <CalendarIcon className="absolute left-3 size-4 text-muted-foreground pointer-events-none z-10" />
                   <Input
                     id="date"
@@ -529,7 +544,6 @@ export default function DoughCalculator() {
               <div className="space-y-2">
                 <Label htmlFor="time">Time</Label>
                 <div className="relative flex items-center">
-                  {/* Lucide Icon on the Left */}
                   <Clock className="absolute left-3 size-4 text-muted-foreground pointer-events-none z-10" />
                   <Input
                     id="time"
@@ -623,7 +637,6 @@ export default function DoughCalculator() {
             <h2 className="text-2xl font-bold tracking-tight">Calculated Dough Specs</h2>
           </div>
 
-          {/* Top Summary Cards */}
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -676,16 +689,15 @@ export default function DoughCalculator() {
             </Card>
           </div>
 
-          {/* Detailed Recipe Breakdown Card */}
           <Card>
             <CardHeader>
               <CardTitle>Detailed Recipe Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* PREFERMENT */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">
-                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} (13h target @ {roomTemp}°C)
+                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} (
+                  {preferment === 'biga' ? '13h' : '16h'} target @ {roomTemp}°C)
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {preferment === 'biga' ? 'BIGA' : 'Poolish'} flour:{' '}
@@ -695,19 +707,16 @@ export default function DoughCalculator() {
                   {preferment === 'biga' ? 'BIGA' : 'Poolish'} water:{' '}
                   <span className="font-medium text-foreground">{results.prefermentWater} g</span>
                 </p>
-                {preferment === 'biga' && (
-                  <p className="text-sm text-muted-foreground">
-                    BIGA yeast:{' '}
-                    <span className="font-medium text-foreground">
-                      {results.prefermentYeast.toFixed(3)} g
-                    </span>
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} yeast:{' '}
+                  <span className="font-medium text-foreground">
+                    {results.prefermentYeast.toFixed(2)} g
+                  </span>
+                </p>
               </div>
 
               <Separator />
 
-              {/* FLOUR BREAKDOWN */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Flour Breakdown</h3>
                 {flour00 !== null && flour00 > 0 && (
@@ -738,7 +747,6 @@ export default function DoughCalculator() {
 
               <Separator />
 
-              {/* REMAINING INGREDIENTS */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Remaining Ingredients</h3>
                 {flour00 !== null && flour00 > 0 && (
@@ -791,7 +799,6 @@ export default function DoughCalculator() {
 
               <Separator />
 
-              {/* TOTALS */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Totals</h3>
                 <p className="text-sm text-muted-foreground">
@@ -815,14 +822,13 @@ export default function DoughCalculator() {
           </Card>
         </section>
       )}
+
       {results && (
-        <Button
-          onClick={handleStartDough}
-          className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
-          size="lg"
-        >
-          <Play className="mr-2 size-4" /> Start This Dough
-        </Button>
+        <div className="pt-4">
+          <Button onClick={handleStartDough} size="lg" className="w-full sm:w-auto">
+            <Play className="mr-2 size-4" /> Start Active Dough Tracking
+          </Button>
+        </div>
       )}
     </div>
   )
