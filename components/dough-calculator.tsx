@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, CalendarIcon, Clock } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
 import { Input } from '@/components/ui/input'
@@ -491,26 +491,35 @@ export default function DoughCalculator() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                <div className="relative flex items-center">
+                  {/* Lucide Icon on the Left */}
+                  <CalendarIcon className="absolute left-3 size-4 text-muted-foreground pointer-events-none z-10" />
+                  <Input
+                    id="date"
+                    type="date"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">Target baking completion date.</p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="time">Time</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={time}
-                  onChange={e => setTime(e.target.value)}
-                  disabled={!date}
-                  className={!date ? 'opacity-50' : ''}
-                />
+                <div className="relative flex items-center">
+                  {/* Lucide Icon on the Left */}
+                  <Clock className="absolute left-3 size-4 text-muted-foreground pointer-events-none z-10" />
+                  <Input
+                    id="time"
+                    type="time"
+                    value={time}
+                    onChange={e => setTime(e.target.value)}
+                    disabled={!date}
+                    className={`pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 ${!date ? 'opacity-50' : ''}`}
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">Target baking completion time.</p>
               </div>
             </div>
