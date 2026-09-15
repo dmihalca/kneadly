@@ -1,4 +1,3 @@
-import { SiteHeader } from '@/components/site-header'
 import DoughCalculator from '@/components/dough-calculator'
 
 export const dynamic = 'force-dynamic'

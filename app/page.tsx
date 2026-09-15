@@ -1,6 +1,5 @@
 import { SiteHeader } from '@/components/site-header'
 import DoughCalculator from '@/components/dough-calculator'
-import { Suspense } from 'react'
 
 export const dynamic = 'force-dynamic'
 

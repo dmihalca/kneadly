@@ -5,17 +5,14 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
 const STYLE_NAMES: Record<string, string> = {
-  neapolitan: 'Neapolitan Dough',
-  'new-york': 'New York Dough',
-  roman: 'Roman Dough',
-  detroit: 'Detroit Dough',
+  'Dough Styles': 'Dough Styles',
 }
 
 export function SiteHeader() {
   const searchParams = useSearchParams()
   const currentStyle = searchParams.get('style')
 
-  const title = currentStyle ? STYLE_NAMES[currentStyle] || 'Dough Calculator' : 'Active Doughs'
+  const title = currentStyle ? STYLE_NAMES[currentStyle] || 'Dough Styles' : 'Active Doughs'
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
