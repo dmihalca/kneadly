@@ -603,6 +603,7 @@ export default function DoughCalculator() {
             <h2 className="text-2xl font-bold tracking-tight">Calculated Dough Specs</h2>
           </div>
 
+          {/* Top Summary Cards */}
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -654,6 +655,144 @@ export default function DoughCalculator() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Detailed Recipe Breakdown Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Recipe Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* PREFERMENT */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">
+                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} (13h target @ {roomTemp}°C)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} flour:{' '}
+                  <span className="font-medium text-foreground">{results.prefermentFlour} g</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {preferment === 'biga' ? 'BIGA' : 'Poolish'} water:{' '}
+                  <span className="font-medium text-foreground">{results.prefermentWater} g</span>
+                </p>
+                {preferment === 'biga' && (
+                  <p className="text-sm text-muted-foreground">
+                    BIGA yeast:{' '}
+                    <span className="font-medium text-foreground">
+                      {results.prefermentYeast.toFixed(3)} g
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* FLOUR BREAKDOWN */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Flour Breakdown</h3>
+                {flour00 !== null && flour00 > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    00 Flour:{' '}
+                    <span className="font-medium text-foreground">{results.flour00Grams} g</span>
+                  </p>
+                )}
+                {breadFlour !== null && breadFlour > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Bread Flour:{' '}
+                    <span className="font-medium text-foreground">{results.breadFlourGrams} g</span>
+                  </p>
+                )}
+                {wholeFlour !== null && wholeFlour > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Whole Wheat:{' '}
+                    <span className="font-medium text-foreground">{results.wholeFlourGrams} g</span>
+                  </p>
+                )}
+                {wholeGrain !== null && wholeGrain > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Whole Grain:{' '}
+                    <span className="font-medium text-foreground">{results.wholeGrainGrams} g</span>
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* REMAINING INGREDIENTS */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Remaining Ingredients</h3>
+                {flour00 !== null && flour00 > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Remaining 00 Flour:{' '}
+                    <span className="font-medium text-foreground">
+                      {results.remaining00Flour} g
+                    </span>
+                  </p>
+                )}
+                {breadFlour !== null && breadFlour > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Remaining Bread Flour:{' '}
+                    <span className="font-medium text-foreground">
+                      {results.remainingBreadFlour} g
+                    </span>
+                  </p>
+                )}
+                {wholeFlour !== null && wholeFlour > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Remaining Whole Wheat:{' '}
+                    <span className="font-medium text-foreground">
+                      {results.remainingWholeFlour} g
+                    </span>
+                  </p>
+                )}
+                {wholeGrain !== null && wholeGrain > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Remaining Whole Grain:{' '}
+                    <span className="font-medium text-foreground">
+                      {results.remainingWholeGrain} g
+                    </span>
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Remaining water:{' '}
+                  <span className="font-medium text-foreground">{results.remainingWater} g</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Salt: <span className="font-medium text-foreground">{results.salt} g</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Diastatic Malt Powder:{' '}
+                  <span className="font-medium text-foreground">{results.dmp} g</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Olive oil: <span className="font-medium text-foreground">{results.oil} g</span>
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* TOTALS */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Totals</h3>
+                <p className="text-sm text-muted-foreground">
+                  Total dough weight:{' '}
+                  <span className="font-medium text-foreground">{results.totalDoughWeight} g</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Total flour:{' '}
+                  <span className="font-medium text-foreground">
+                    {results.totalFlour.toFixed(1)} g
+                  </span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Total water:{' '}
+                  <span className="font-medium text-foreground">
+                    {(results.bigaWater + results.remainingWater).toFixed(1)} g
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </section>
       )}
     </div>
