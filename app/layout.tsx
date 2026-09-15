@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { SiteHeader } from '@/components/site-header'
 import { Suspense } from 'react'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -32,7 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Suspense fallback={null}>
             <AppSidebar variant="inset" />
           </Suspense>
-          <SidebarInset>{children}</SidebarInset>
+          <SidebarInset>
+            <Suspense fallback={null}>
+              <SiteHeader />
+            </Suspense>
+            {children}
+          </SidebarInset>
         </SidebarProvider>
       </body>
     </html>

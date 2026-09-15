@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { RotateCcw, CalendarIcon, Clock } from 'lucide-react'
+import { RotateCcw, CalendarIcon, Clock, Play } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
 import { Input } from '@/components/ui/input'
@@ -22,6 +22,8 @@ const presets = {
 }
 
 type PresetName = keyof typeof presets
+
+type DoughStage = 'preferment' | 'final_dough' | 'bulk' | 'completed'
 
 type DoughResults = {
   earliest: Date | null
@@ -259,6 +261,24 @@ export default function DoughCalculator() {
     wholeFlour >= 0 &&
     wholeGrain >= 0 &&
     flour00 + breadFlour + wholeFlour + wholeGrain > 0
+
+  const handleStartDough = () => {
+    if (!results) return
+
+    const newActiveDough = {
+      id: Date.now().toString(),
+      preset: presetDisplayName,
+      preferment, // e.g., 'biga', 'poolish', etc.
+      roomTemp,
+      results, // Must include: totalFlour, totalWater, prefermentFlour, prefermentWater, prefermentPercentage, prefermentHydration, finalFlour, finalWater, salt, yeast, oil, dmp, etc.
+      startedAt: new Date().toISOString(),
+      stage: 'preferment' as DoughStage,
+    }
+
+    const existing = JSON.parse(localStorage.getItem('activeDoughs') || '[]')
+    localStorage.setItem('activeDoughs', JSON.stringify([newActiveDough, ...existing]))
+    window.location.href = '/active-doughs'
+  }
 
   const presetDisplayName =
     activePreset === 'newYork'
@@ -794,6 +814,15 @@ export default function DoughCalculator() {
             </CardContent>
           </Card>
         </section>
+      )}
+      {results && (
+        <Button
+          onClick={handleStartDough}
+          className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
+          size="lg"
+        >
+          <Play className="mr-2 size-4" /> Start This Dough
+        </Button>
       )}
     </div>
   )

@@ -18,6 +18,7 @@ import {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const searchParams = useSearchParams()
   const currentStyle = searchParams.get('style')
+  const isDashboardRoot = !currentStyle // or check path if using separate routes
 
   const presets = [
     {
@@ -70,10 +71,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={!currentStyle}
+                isActive={isDashboardRoot}
                 className="h-9 px-2 text-sm font-medium"
               >
-                <a href="/dashboard" className="flex items-center gap-3">
+                {/* Make sure the leading slash is present */}
+                <a href="/active-doughs" className="flex items-center gap-3">
                   <LayoutDashboard className="size-4 shrink-0" />
                   <span>Active Doughs</span>
                 </a>
