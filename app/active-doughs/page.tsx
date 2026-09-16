@@ -12,10 +12,11 @@ import {
   Layers,
   Calculator,
   ArrowLeft,
+  ArrowRight,
   Clock,
-  TrendingUp,
   SunMedium,
   AlertCircle,
+  Eye,
 } from 'lucide-react'
 
 type DoughStage = 'preferment' | 'final_dough' | 'bulk' | 'ball_ferment' | 'room_rest' | 'completed'
@@ -58,14 +59,94 @@ interface ActiveDough {
   bulkReadyAt?: string
   ballFermentReadyAt?: string
   roomRestReadyAt?: string
+  prefermentStarted?: boolean
+  prefermentDuration?: number
+  prefermentCompleted?: boolean
+  finalDoughCompleted?: boolean
+  bulkStarted?: boolean
+  bulkDuration?: number
+  bulkCompleted?: boolean
+  ballFermentStarted?: boolean
+  ballFermentDuration?: number
+  ballFermentCompleted?: boolean
+  roomRestStarted?: boolean
+  roomRestCompleted?: boolean
+  isPreviewingFinal?: boolean
+}
+
+//
+// Hybrid Temperature Activity Model & Preferment Time Engine
+//
+
+function tempActivity(tempC: number) {
+  if (tempC <= 26) {
+    return tempC / 22
+  }
+  return (tempC / 22) * Math.exp(0.08 * (tempC - 26))
+}
+
+export function poolishTimesFromTemp(tempC: number) {
+  const base = 0.15
+  const ref = 12
+  const tempFactor = tempActivity(tempC)
+
+  const yeastMin = 0.3
+  const yeastRec = 0.15
+  const yeastMax = 0.1
+
+  const min = (base * ref * tempFactor) / yeastMin
+  const rec = (base * ref * tempFactor) / yeastRec
+  const max = (base * ref * tempFactor) / yeastMax
+
+  return {
+    min: Math.round(Math.max(min, 8)),
+    recommended: Math.round(Math.min(rec, 16)),
+    max: Math.round(Math.min(max, 24)),
+  }
+}
+
+export function bigaTimesFromTemp(tempC: number) {
+  const base = 0.1
+  const ref = 14
+  const tempFactor = tempActivity(tempC)
+
+  const yeastMin = 0.12
+  const yeastRec = 0.1
+  const yeastMax = 0.08
+
+  const min = (base * ref * tempFactor) / yeastMin
+  const rec = (base * ref * tempFactor) / yeastRec
+  const max = (base * ref * tempFactor) / yeastMax
+
+  return {
+    min: Math.round(Math.max(min, 10)),
+    recommended: Math.round(Math.min(rec, 16)),
+    max: Math.round(Math.min(max, 20)),
+  }
+}
+
+export function getPrefermentTimes(type: 'biga' | 'poolish', tempC: number) {
+  return type === 'biga' ? bigaTimesFromTemp(tempC) : poolishTimesFromTemp(tempC)
+}
+
+const getPrefermentTimeOptions = (preferment: string, temp: number = 21) => {
+  const type = preferment.toLowerCase() === 'poolish' ? 'poolish' : 'biga'
+  const times = getPrefermentTimes(type, temp)
+
+  return [
+    { label: `Earliest (${times.min}h)`, hours: times.min },
+    { label: `Rec. (${times.recommended}h)`, hours: times.recommended },
+    { label: `Max (${times.max}h)`, hours: times.max },
+  ]
 }
 
 export default function ActiveDoughsPage() {
   const [activeDoughs, setActiveDoughs] = useState<ActiveDough[]>([])
   const [confirmModalDoughId, setConfirmModalDoughId] = useState<string | null>(null)
+  const [bulkConfirmModalDoughId, setBulkConfirmModalDoughId] = useState<string | null>(null)
+  const [ballConfirmModalDoughId, setBallConfirmModalDoughId] = useState<string | null>(null)
   const [, setTick] = useState(0)
 
-  // Force tick every second to keep live countdowns updating
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000)
     return () => clearInterval(timer)
@@ -74,10 +155,15 @@ export default function ActiveDoughsPage() {
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('activeDoughs') || '[]')
     const initialized = saved.map((dough: ActiveDough) => {
-      const startDate = new Date(dough.startedAt)
-      if (!dough.prefermentReadyAt) {
-        dough.prefermentReadyAt = addHours(startDate, 13).toISOString()
-      }
+      if (dough.prefermentStarted === undefined) dough.prefermentStarted = false
+      if (dough.prefermentCompleted === undefined) dough.prefermentCompleted = false
+      if (dough.finalDoughCompleted === undefined) dough.finalDoughCompleted = false
+      if (dough.bulkStarted === undefined) dough.bulkStarted = false
+      if (dough.bulkCompleted === undefined) dough.bulkCompleted = false
+      if (dough.ballFermentStarted === undefined) dough.ballFermentStarted = false
+      if (dough.ballFermentCompleted === undefined) dough.ballFermentCompleted = false
+      if (dough.roomRestStarted === undefined) dough.roomRestStarted = false
+      if (dough.roomRestCompleted === undefined) dough.roomRestCompleted = false
       return dough
     })
     setActiveDoughs(initialized)
@@ -87,13 +173,44 @@ export default function ActiveDoughsPage() {
     const now = new Date()
     const updated = activeDoughs.map(dough => {
       if (dough.id === id) {
-        const updatedDough = { ...dough, stage: nextStage }
-        if (nextStage === 'bulk' && !updatedDough.bulkReadyAt) {
-          updatedDough.bulkReadyAt = addHours(now, 48).toISOString()
-        } else if (nextStage === 'ball_ferment' && !updatedDough.ballFermentReadyAt) {
-          updatedDough.ballFermentReadyAt = addHours(now, 24).toISOString()
-        } else if (nextStage === 'room_rest' && !updatedDough.roomRestReadyAt) {
+        const currentStage = dough.stage || 'preferment'
+        let prefermentCompleted = dough.prefermentCompleted
+        let finalDoughCompleted = dough.finalDoughCompleted
+        let bulkCompleted = dough.bulkCompleted
+        let ballFermentCompleted = dough.ballFermentCompleted
+        let roomRestCompleted = dough.roomRestCompleted
+        let roomRestStarted = dough.roomRestStarted
+
+        if (currentStage === 'preferment' && nextStage === 'final_dough') {
+          prefermentCompleted = true
+        }
+        if (currentStage === 'final_dough' && nextStage === 'bulk') {
+          finalDoughCompleted = true
+        }
+        if (currentStage === 'bulk' && nextStage === 'ball_ferment') {
+          bulkCompleted = true
+        }
+        if (currentStage === 'ball_ferment' && nextStage === 'room_rest') {
+          ballFermentCompleted = true
+        }
+        if (currentStage === 'room_rest' && nextStage === 'completed') {
+          roomRestCompleted = true
+        }
+
+        const updatedDough = {
+          ...dough,
+          stage: nextStage,
+          prefermentCompleted,
+          finalDoughCompleted,
+          bulkCompleted,
+          ballFermentCompleted,
+          roomRestCompleted,
+          roomRestStarted,
+          isPreviewingFinal: false,
+        }
+        if (nextStage === 'room_rest' && !updatedDough.roomRestReadyAt) {
           updatedDough.roomRestReadyAt = addHours(now, 3).toISOString()
+          updatedDough.roomRestStarted = true
         }
         return updatedDough
       }
@@ -101,6 +218,67 @@ export default function ActiveDoughsPage() {
     })
     setActiveDoughs(updated)
     localStorage.setItem('activeDoughs', JSON.stringify(updated))
+  }
+
+  const startPrefermentTimer = (id: string, hours: number) => {
+    const now = new Date()
+    const updated = activeDoughs.map(dough => {
+      if (dough.id === id) {
+        return {
+          ...dough,
+          prefermentStarted: true,
+          prefermentDuration: hours,
+          prefermentReadyAt: addHours(now, hours).toISOString(),
+        }
+      }
+      return dough
+    })
+    setActiveDoughs(updated)
+    localStorage.setItem('activeDoughs', JSON.stringify(updated))
+  }
+
+  const startBulkTimer = (id: string, hours: number) => {
+    const now = new Date()
+    const updated = activeDoughs.map(dough => {
+      if (dough.id === id) {
+        return {
+          ...dough,
+          bulkStarted: true,
+          bulkDuration: hours,
+          bulkReadyAt: addHours(now, hours).toISOString(),
+        }
+      }
+      return dough
+    })
+    setActiveDoughs(updated)
+    localStorage.setItem('activeDoughs', JSON.stringify(updated))
+  }
+
+  const startBallFermentTimer = (id: string, hours: number) => {
+    const now = new Date()
+    const updated = activeDoughs.map(dough => {
+      if (dough.id === id) {
+        return {
+          ...dough,
+          ballFermentStarted: true,
+          ballFermentDuration: hours,
+          ballFermentReadyAt: addHours(now, hours).toISOString(),
+        }
+      }
+      return dough
+    })
+    setActiveDoughs(updated)
+    localStorage.setItem('activeDoughs', JSON.stringify(updated))
+  }
+
+  const togglePreviewFinal = (id: string) => {
+    const updated = activeDoughs.map(dough => {
+      if (dough.id === id) {
+        return { ...dough, isPreviewingFinal: !dough.isPreviewingFinal }
+      }
+      return dough
+    })
+    setActiveDoughs(updated)
   }
 
   const deleteDough = (id: string) => {
@@ -153,7 +331,6 @@ export default function ActiveDoughsPage() {
             const prefHydration =
               res.prefermentHydration || (prefFlour ? Math.round((prefWater / prefFlour) * 100) : 0)
 
-            // Look for yeast in different possible keys stored from the calculator
             const yeastAmount =
               res.prefermentYeast !== undefined
                 ? res.prefermentYeast
@@ -165,6 +342,8 @@ export default function ActiveDoughsPage() {
               res.finalFlour !== undefined ? res.finalFlour : res.totalFlour - prefFlour
             const finalWater =
               res.finalWater !== undefined ? res.finalWater : res.totalWater - prefWater
+
+            const currentIndex = stages.indexOf(currentStage)
 
             return (
               <Card key={dough.id} className="relative flex flex-col shadow-sm">
@@ -184,7 +363,7 @@ export default function ActiveDoughsPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Started on: {format(new Date(dough.startedAt), 'MMM d, yyyy @ HH:mm')}
+                    Added on: {format(new Date(dough.startedAt), 'MMM d, yyyy @ HH:mm')}
                   </p>
                 </CardHeader>
 
@@ -206,50 +385,60 @@ export default function ActiveDoughsPage() {
                         className={
                           currentStage === 'preferment'
                             ? 'text-primary font-bold'
-                            : 'text-muted-foreground'
+                            : dough.prefermentCompleted
+                              ? 'text-green-600 font-medium'
+                              : 'text-muted-foreground'
                         }
                       >
-                        1. Preferment
+                        1. Preferment {dough.prefermentCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
                         className={
                           currentStage === 'final_dough'
                             ? 'text-primary font-bold'
-                            : 'text-muted-foreground'
+                            : dough.finalDoughCompleted
+                              ? 'text-green-600 font-medium'
+                              : 'text-muted-foreground'
                         }
                       >
-                        2. Final
+                        2. Final {dough.finalDoughCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
                         className={
                           currentStage === 'bulk'
                             ? 'text-primary font-bold'
-                            : 'text-muted-foreground'
+                            : dough.bulkCompleted
+                              ? 'text-green-600 font-medium'
+                              : 'text-muted-foreground'
                         }
                       >
-                        3. Bulk
+                        3. Bulk {dough.bulkCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
                         className={
                           currentStage === 'ball_ferment'
                             ? 'text-primary font-bold'
-                            : 'text-muted-foreground'
+                            : dough.ballFermentCompleted
+                              ? 'text-green-600 font-medium'
+                              : 'text-muted-foreground'
                         }
                       >
-                        4. Balled
+                        4. Balled {dough.ballFermentCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
                         className={
                           currentStage === 'room_rest'
                             ? 'text-primary font-bold'
-                            : 'text-muted-foreground'
+                            : dough.roomRestCompleted
+                              ? 'text-green-600 font-medium'
+                              : 'text-muted-foreground'
                         }
                       >
-                        5. Rest
+                        5. Rest {dough.roomRestCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
@@ -265,35 +454,116 @@ export default function ActiveDoughsPage() {
 
                     {/* Dynamic Content Area */}
                     <div>
-                      {/* Step 1: Preferment Breakdown with robust yeast detection */}
-                      {currentStage === 'preferment' && dough.preferment !== 'none' && (
-                        <div className="text-xs space-y-1.5 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
-                          <p className="font-semibold text-foreground flex items-center gap-1">
-                            <Calculator className="size-3.5 text-primary" /> Step 1: Preferment Mix
-                            ({dough.preferment.toUpperCase()}):
-                          </p>
+                      {/* Step 1 Content */}
+                      {currentStage === 'preferment' &&
+                        dough.preferment !== 'none' &&
+                        !dough.isPreviewingFinal && (
+                          <div className="text-xs space-y-2 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
+                            <p className="font-semibold text-foreground flex items-center gap-1">
+                              <Calculator className="size-3.5 text-primary" /> Step 1: Preferment
+                              Mix ({dough.preferment.toUpperCase()}):
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
+                              <p>
+                                Flour:{' '}
+                                <span className="font-medium text-foreground">{prefFlour} g</span>{' '}
+                                <span className="text-[10px]">
+                                  ({prefFlourPct}% of total flour)
+                                </span>
+                              </p>
+                              <p>
+                                Water:{' '}
+                                <span className="font-medium text-foreground">{prefWater} g</span>{' '}
+                                <span className="text-[10px]">({prefHydration}% hydration)</span>
+                              </p>
+                              {yeastAmount > 0 && (
+                                <p className="col-span-2">
+                                  Yeast:{' '}
+                                  <span className="font-medium text-foreground">
+                                    {Number(yeastAmount).toFixed(2)} g
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                            {!dough.prefermentStarted && !dough.prefermentCompleted && (
+                              <div className="pt-2 border-t border-border/60">
+                                <p className="text-[11px] font-medium text-foreground mb-1.5">
+                                  Select duration ({dough.preferment.toUpperCase()} at{' '}
+                                  {dough.roomTemp || 21}°C):
+                                </p>
+                                <div className="flex gap-2">
+                                  {getPrefermentTimeOptions(
+                                    dough.preferment,
+                                    dough.roomTemp || 21
+                                  ).map(option => (
+                                    <Button
+                                      key={option.hours}
+                                      variant={
+                                        dough.prefermentDuration === option.hours
+                                          ? 'default'
+                                          : 'outline'
+                                      }
+                                      size="sm"
+                                      className="flex-1 h-7 text-[10px] px-1"
+                                      onClick={() => startPrefermentTimer(dough.id, option.hours)}
+                                    >
+                                      {option.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                      {/* Preview Step 2 Ingredients */}
+                      {currentStage === 'preferment' && dough.isPreviewingFinal && (
+                        <div className="text-xs space-y-1.5 bg-primary/5 p-3 rounded-md border border-primary/20 animate-in fade-in-50">
+                          <div className="flex items-center justify-between pb-1 border-b border-primary/10">
+                            <p className="font-semibold text-primary flex items-center gap-1">
+                              <Eye className="size-3.5" /> Preview: Step 2 Final Mix (Read-Only)
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px]"
+                              onClick={() => togglePreviewFinal(dough.id)}
+                            >
+                              Back to Step 1
+                            </Button>
+                          </div>
                           <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
                             <p>
-                              Flour:{' '}
-                              <span className="font-medium text-foreground">{prefFlour} g</span>{' '}
-                              <span className="text-[10px]">({prefFlourPct}% of total flour)</span>
+                              Remaining Flour:{' '}
+                              <span className="font-medium text-foreground">{finalFlour} g</span>
                             </p>
                             <p>
-                              Water:{' '}
-                              <span className="font-medium text-foreground">{prefWater} g</span>{' '}
-                              <span className="text-[10px]">({prefHydration}% hydration)</span>
+                              Remaining Water:{' '}
+                              <span className="font-medium text-foreground">{finalWater} g</span>
                             </p>
-                            {yeastAmount > 0 && (
-                              <p className="col-span-2">
-                                Yeast:{' '}
-                                <span className="font-medium text-foreground">
-                                  {Number(yeastAmount).toFixed(2)} g
-                                </span>
+                            {res.salt !== undefined && res.salt > 0 && (
+                              <p>
+                                Salt:{' '}
+                                <span className="font-medium text-foreground">{res.salt} g</span>
+                              </p>
+                            )}
+                            {res.oil !== undefined && res.oil > 0 && (
+                              <p>
+                                Oil:{' '}
+                                <span className="font-medium text-foreground">{res.oil} g</span>
+                              </p>
+                            )}
+                            {res.dmp !== undefined && res.dmp > 0 && (
+                              <p>
+                                DMP:{' '}
+                                <span className="font-medium text-foreground">{res.dmp} g</span>
                               </p>
                             )}
                           </div>
                         </div>
                       )}
+
+                      {/* Step 2 Content */}
                       {currentStage === 'final_dough' && (
                         <div className="text-xs space-y-1.5 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <p className="font-semibold text-foreground flex items-center gap-1">
@@ -315,7 +585,6 @@ export default function ActiveDoughsPage() {
                                 <span className="font-medium text-foreground">{res.salt} g</span>
                               </p>
                             )}
-                            {/* ONLY show yeast here if there is NO preferment (direct dough) */}
                             {dough.preferment === 'none' &&
                               res.yeast !== undefined &&
                               res.yeast > 0 && (
@@ -342,69 +611,86 @@ export default function ActiveDoughsPage() {
                         </div>
                       )}
 
+                      {/* Step 3 Content */}
                       {currentStage === 'bulk' && (
                         <div className="text-xs space-y-3 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <div className="flex items-center justify-between">
                             <p className="font-semibold text-foreground flex items-center gap-1">
-                              <Clock className="size-3.5 text-primary" /> Step 3: Bulk Ferment (48
-                              hrs):
+                              <Clock className="size-3.5 text-primary" /> Step 3: Bulk Ferment
                             </p>
                             <Badge variant="secondary" className="text-[10px]">
                               Active Fermentation
                             </Badge>
                           </div>
                           <p className="text-muted-foreground leading-relaxed">
-                            Bulk fermenting your dough for 48 hours. Monitor gas production and
-                            gluten structure development.
+                            Bulk fermenting your dough. Monitor gas production and gluten structure
+                            development.
                           </p>
-                          <div className="space-y-1 pt-1">
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <TrendingUp className="size-3 text-primary" /> Fermentation Activity
-                                Curve
-                              </span>
-                              <span>Peak Bulk</span>
+                          {!dough.bulkStarted && !dough.bulkCompleted && (
+                            <div className="pt-2 border-t border-border/60">
+                              <p className="text-[11px] font-medium text-foreground mb-1.5">
+                                Select bulk fermentation duration to start timer:
+                              </p>
+                              <div className="flex gap-2">
+                                {[24, 48, 72].map(hrs => (
+                                  <Button
+                                    key={hrs}
+                                    variant={dough.bulkDuration === hrs ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={() => startBulkTimer(dough.id, hrs)}
+                                  >
+                                    {hrs}h {hrs === 48 ? '(Rec.)' : ''}
+                                  </Button>
+                                ))}
+                              </div>
                             </div>
-                            <div className="h-10 w-full bg-background rounded border flex items-end px-1 gap-0.5">
-                              {[6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15].map(
-                                (height, i) => (
-                                  <div
-                                    key={i}
-                                    style={{ height: `${height}%` }}
-                                    className="
-        flex-1 
-        rounded-t 
-        bg-gradient-to-t from-primary/30 to-primary/60 
-        animate-[pulse_4s_ease-in-out_infinite] 
-        transition-all
-      "
-                                  />
-                                )
-                              )}
-                            </div>
-                          </div>
+                          )}
                         </div>
                       )}
 
+                      {/* Step 4 Content */}
                       {currentStage === 'ball_ferment' && (
-                        <div className="text-xs space-y-2 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
+                        <div className="text-xs space-y-3 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <div className="flex items-center justify-between">
                             <p className="font-semibold text-foreground flex items-center gap-1">
-                              <Layers className="size-3.5 text-primary" /> Step 4: 24h Balled
-                              Ferment:
+                              <Layers className="size-3.5 text-primary" /> Step 4: Balled Ferment
                             </p>
                             <Badge variant="secondary" className="text-[10px]">
-                              24 Hours
+                              Portioned Balls
                             </Badge>
                           </div>
                           <p className="text-muted-foreground leading-relaxed">
                             Divide your dough into {res.doughBallCount} individual portions of{' '}
-                            {res.doughBallWeight}g each, round them into tight balls, and store them
-                            in fermentation boxes for 24 hours.
+                            {res.doughBallWeight}g each, round them into tight balls, and store
+                            them.
                           </p>
+                          {!dough.ballFermentStarted && !dough.ballFermentCompleted && (
+                            <div className="pt-2 border-t border-border/60">
+                              <p className="text-[11px] font-medium text-foreground mb-1.5">
+                                Select ball fermentation duration to start timer:
+                              </p>
+                              <div className="flex gap-2">
+                                {[16, 20, 24].map(hrs => (
+                                  <Button
+                                    key={hrs}
+                                    variant={
+                                      dough.ballFermentDuration === hrs ? 'default' : 'outline'
+                                    }
+                                    size="sm"
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={() => startBallFermentTimer(dough.id, hrs)}
+                                  >
+                                    {hrs}h {hrs === 24 ? '(Rec.)' : ''}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
+                      {/* Step 5 Content */}
                       {currentStage === 'room_rest' && (
                         <div className="text-xs space-y-2 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <div className="flex items-center justify-between">
@@ -426,6 +712,7 @@ export default function ActiveDoughsPage() {
                         </div>
                       )}
 
+                      {/* Step 6 Content */}
                       {currentStage === 'completed' && (
                         <div className="text-xs space-y-1.5 bg-green-500/10 p-3 rounded-md border border-green-500/20 text-green-700 dark:text-green-300 animate-in fade-in-50">
                           <p className="font-semibold flex items-center gap-1">
@@ -449,7 +736,6 @@ export default function ActiveDoughsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const currentIndex = stages.indexOf(currentStage)
                             if (currentIndex > 0) {
                               updateStage(dough.id, stages[currentIndex - 1])
                             }
@@ -459,61 +745,201 @@ export default function ActiveDoughsPage() {
                         </Button>
                       )}
 
+                      {/* Step 1 Actions */}
                       {currentStage === 'preferment' && (
-                        <Button size="sm" onClick={() => setConfirmModalDoughId(dough.id)}>
-                          Finish Preferment <Play className="ml-2 size-3" />
-                        </Button>
+                        <>
+                          {!dough.prefermentCompleted ? (
+                            <Button
+                              size="sm"
+                              disabled={!dough.prefermentStarted}
+                              onClick={() => {
+                                if (dough.prefermentStarted) {
+                                  setConfirmModalDoughId(dough.id)
+                                }
+                              }}
+                            >
+                              Finish Preferment <Play className="ml-2 size-3" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'final_dough')}>
+                              Go to Step 2 <ArrowRight className="ml-1.5 size-3" />
+                            </Button>
+                          )}
+
+                          {!dough.prefermentCompleted && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => togglePreviewFinal(dough.id)}
+                            >
+                              <Eye className="mr-1.5 size-3" />
+                              {dough.isPreviewingFinal ? 'Hide Preview' : 'Preview Step 2'}
+                            </Button>
+                          )}
+                        </>
                       )}
+
+                      {/* Step 2 Actions */}
                       {currentStage === 'final_dough' && (
-                        <Button size="sm" onClick={() => updateStage(dough.id, 'bulk')}>
-                          Start Bulk Ferment <Play className="ml-2 size-3" />
-                        </Button>
+                        <>
+                          {!dough.finalDoughCompleted ? (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'bulk')}>
+                              Start Bulk Ferment <Play className="ml-2 size-3" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'bulk')}>
+                              Go to Step 3 <ArrowRight className="ml-1.5 size-3" />
+                            </Button>
+                          )}
+                        </>
                       )}
+
+                      {/* Step 3 Actions */}
                       {currentStage === 'bulk' && (
-                        <Button size="sm" onClick={() => updateStage(dough.id, 'ball_ferment')}>
-                          Start Balled Ferment <Play className="ml-2 size-3" />
-                        </Button>
+                        <>
+                          {!dough.bulkCompleted ? (
+                            <Button
+                              size="sm"
+                              disabled={!dough.bulkStarted}
+                              onClick={() => {
+                                if (dough.bulkStarted) {
+                                  setBulkConfirmModalDoughId(dough.id)
+                                }
+                              }}
+                            >
+                              Finish Bulk Fermentation <Play className="ml-2 size-3" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'ball_ferment')}>
+                              Go to Step 4 <ArrowRight className="ml-1.5 size-3" />
+                            </Button>
+                          )}
+                        </>
                       )}
+
+                      {/* Step 4 Actions */}
                       {currentStage === 'ball_ferment' && (
-                        <Button size="sm" onClick={() => updateStage(dough.id, 'room_rest')}>
-                          Start Room Rest <Play className="ml-2 size-3" />
-                        </Button>
+                        <>
+                          {!dough.ballFermentCompleted ? (
+                            <Button
+                              size="sm"
+                              disabled={!dough.ballFermentStarted}
+                              onClick={() => {
+                                if (dough.ballFermentStarted) {
+                                  setBallConfirmModalDoughId(dough.id)
+                                }
+                              }}
+                            >
+                              Finish Ball Fermentation <Play className="ml-2 size-3" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'room_rest')}>
+                              Go to Step 5 <ArrowRight className="ml-1.5 size-3" />
+                            </Button>
+                          )}
+                        </>
                       )}
+
+                      {/* Step 5 Actions */}
                       {currentStage === 'room_rest' && (
-                        <Button size="sm" onClick={() => updateStage(dough.id, 'completed')}>
-                          Mark Ready to Bake <CheckCircle2 className="ml-2 size-3" />
-                        </Button>
+                        <>
+                          {!dough.roomRestCompleted ? (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'completed')}>
+                              Mark Ready to Bake <CheckCircle2 className="ml-2 size-3" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" onClick={() => updateStage(dough.id, 'completed')}>
+                              Go to Step 6 <ArrowRight className="ml-1.5 size-3" />
+                            </Button>
+                          )}
+                        </>
                       )}
+
                       {currentStage === 'completed' && (
                         <Badge className="bg-green-600 text-white">Ready for Oven</Badge>
                       )}
                     </div>
 
-                    {/* Stage-specific countdown timers positioned on the right */}
-                    {currentStage === 'preferment' && (
+                    {/* Persistent Completion Badges or Active Timers per Step */}
+                    {currentStage === 'preferment' && dough.prefermentCompleted ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                      >
+                        <CheckCircle2 className="size-3" /> {dough.prefermentDuration || 13}h
+                        Fermentation Complete
+                      </Badge>
+                    ) : currentStage === 'preferment' && dough.prefermentStarted ? (
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs font-mono border">
                         <Clock className="size-3.5 text-primary animate-pulse" />
-                        <span>{getFormattedCountdown(dough.prefermentReadyAt, 13)}</span>
+                        <span>
+                          {getFormattedCountdown(
+                            dough.prefermentReadyAt,
+                            dough.prefermentDuration || 13
+                          )}
+                        </span>
                       </div>
-                    )}
-                    {currentStage === 'bulk' && (
+                    ) : null}
+
+                    {currentStage === 'final_dough' && dough.finalDoughCompleted ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                      >
+                        <CheckCircle2 className="size-3" /> Final Mix Complete
+                      </Badge>
+                    ) : null}
+
+                    {currentStage === 'bulk' && dough.bulkCompleted ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                      >
+                        <CheckCircle2 className="size-3" /> {dough.bulkDuration || 48}h Bulk
+                        Fermentation Complete
+                      </Badge>
+                    ) : currentStage === 'bulk' && dough.bulkStarted ? (
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs font-mono border">
                         <Clock className="size-3.5 text-primary animate-pulse" />
-                        <span>{getFormattedCountdown(dough.bulkReadyAt, 48)}</span>
+                        <span>
+                          {getFormattedCountdown(dough.bulkReadyAt, dough.bulkDuration || 48)}
+                        </span>
                       </div>
-                    )}
-                    {currentStage === 'ball_ferment' && (
+                    ) : null}
+
+                    {currentStage === 'ball_ferment' && dough.ballFermentCompleted ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                      >
+                        <CheckCircle2 className="size-3" /> {dough.ballFermentDuration || 24}h Ball
+                        Fermentation Complete
+                      </Badge>
+                    ) : currentStage === 'ball_ferment' && dough.ballFermentStarted ? (
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs font-mono border">
                         <Clock className="size-3.5 text-primary animate-pulse" />
-                        <span>{getFormattedCountdown(dough.ballFermentReadyAt, 24)}</span>
+                        <span>
+                          {getFormattedCountdown(
+                            dough.ballFermentReadyAt,
+                            dough.ballFermentDuration || 24
+                          )}
+                        </span>
                       </div>
-                    )}
-                    {currentStage === 'room_rest' && (
+                    ) : null}
+
+                    {currentStage === 'room_rest' && dough.roomRestCompleted ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                      >
+                        <CheckCircle2 className="size-3" /> 3h Room Rest Complete
+                      </Badge>
+                    ) : currentStage === 'room_rest' ? (
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-xs font-mono border">
                         <Clock className="size-3.5 text-amber-500 animate-pulse" />
                         <span>{getFormattedCountdown(dough.roomRestReadyAt, 3)}</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
@@ -543,6 +969,66 @@ export default function ActiveDoughsPage() {
                 onClick={() => {
                   updateStage(confirmModalDoughId, 'final_dough')
                   setConfirmModalDoughId(null)
+                }}
+              >
+                Yes, Move Forward
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Bulk Fermentation Completion */}
+      {bulkConfirmModalDoughId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
+          <div className="bg-card border rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
+            <div className="flex items-center gap-3 text-primary">
+              <AlertCircle className="size-6" />
+              <h3 className="text-lg font-semibold text-foreground">Confirm Bulk Fermentation</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Are you sure bulk fermentation is complete? Moving forward will transition to Step 4
+              (Balled Ferment).
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setBulkConfirmModalDoughId(null)}>
+                No, Stay Here
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  updateStage(bulkConfirmModalDoughId, 'ball_ferment')
+                  setBulkConfirmModalDoughId(null)
+                }}
+              >
+                Yes, Move Forward
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Ball Fermentation Completion */}
+      {ballConfirmModalDoughId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
+          <div className="bg-card border rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
+            <div className="flex items-center gap-3 text-primary">
+              <AlertCircle className="size-6" />
+              <h3 className="text-lg font-semibold text-foreground">Confirm Ball Fermentation</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Are you sure ball fermentation is complete? Moving forward will transition to Step 5
+              (Room Rest).
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setBallConfirmModalDoughId(null)}>
+                No, Stay Here
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  updateStage(ballConfirmModalDoughId, 'room_rest')
+                  setBallConfirmModalDoughId(null)
                 }}
               >
                 Yes, Move Forward
