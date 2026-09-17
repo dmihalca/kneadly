@@ -449,7 +449,7 @@ export default function DoughCalculator() {
                   onChange={e => setRoomTemp(e.target.value === '' ? null : Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Used directly by the Biga yeast calculation.
+                  Used directly for the preferment yeast calculation.
                 </p>
               </div>
             </div>

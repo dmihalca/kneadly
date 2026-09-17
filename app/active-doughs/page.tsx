@@ -361,7 +361,10 @@ export default function ActiveDoughsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">
-                      {dough.preset} Style ({dough.preferment.toUpperCase()})
+                      {dough.preset} Style (
+                      {dough.preferment.charAt(0).toUpperCase() +
+                        dough.preferment.slice(1).toLowerCase()}
+                      )
                     </CardTitle>
                     <Button
                       variant="ghost"
