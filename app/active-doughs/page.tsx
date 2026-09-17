@@ -1,5 +1,16 @@
 'use client'
 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+
 import { useState, useEffect } from 'react'
 import { format, addHours, differenceInSeconds } from 'date-fns'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -308,7 +319,7 @@ export default function ActiveDoughsPage() {
     <div className="px-4 lg:px-6 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Active Doughs</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-2">
           Manage and track your doughs currently in progress.
         </p>
       </div>
@@ -318,7 +329,7 @@ export default function ActiveDoughsPage() {
           <p>No active doughs found. Head over to the calculator to start one!</p>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6">
           {activeDoughs.map(dough => {
             const currentStage = dough.stage || 'preferment'
             const res = dough.results
@@ -380,7 +391,7 @@ export default function ActiveDoughsPage() {
                     </div>
 
                     {/* Step Tracker */}
-                    <div className="flex items-center justify-between text-[10px] font-medium border-b pb-3">
+                    <div className="flex items-center justify-between text-[12px] font-medium">
                       <span
                         className={
                           currentStage === 'preferment'
@@ -402,7 +413,7 @@ export default function ActiveDoughsPage() {
                               : 'text-muted-foreground'
                         }
                       >
-                        2. Final {dough.finalDoughCompleted && '✓'}
+                        2. Dough Mixing {dough.finalDoughCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
@@ -414,7 +425,7 @@ export default function ActiveDoughsPage() {
                               : 'text-muted-foreground'
                         }
                       >
-                        3. Bulk {dough.bulkCompleted && '✓'}
+                        3. Bulk Fermentation {dough.bulkCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
@@ -426,7 +437,7 @@ export default function ActiveDoughsPage() {
                               : 'text-muted-foreground'
                         }
                       >
-                        4. Balled {dough.ballFermentCompleted && '✓'}
+                        4. Balled Fermentation {dough.ballFermentCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
@@ -438,7 +449,7 @@ export default function ActiveDoughsPage() {
                               : 'text-muted-foreground'
                         }
                       >
-                        5. Rest {dough.roomRestCompleted && '✓'}
+                        5. Room Temperature Rest {dough.roomRestCompleted && '✓'}
                       </span>
                       <span>→</span>
                       <span
@@ -487,7 +498,7 @@ export default function ActiveDoughsPage() {
                             </div>
                             {!dough.prefermentStarted && !dough.prefermentCompleted && (
                               <div className="pt-2 border-t border-border/60">
-                                <p className="text-[11px] font-medium text-foreground mb-1.5">
+                                <p className="text-[12px] font-medium text-foreground mb-1.5">
                                   Select duration ({dough.preferment.toUpperCase()} at{' '}
                                   {dough.roomTemp || 21}°C):
                                 </p>
@@ -534,10 +545,10 @@ export default function ActiveDoughsPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
                             <div className="col-span-2 space-y-1 bg-background/50 p-2 rounded border">
-                              <p className="text-[11px] font-semibold text-foreground">
+                              <p className="text-[12px] font-semibold text-foreground">
                                 Remaining Flour Breakdown:
                               </p>
-                              <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                              <div className="grid grid-cols-2 gap-1 text-[12px] text-muted-foreground">
                                 {res.remaining00Flour > 0 && (
                                   <p>
                                     Type 00:{' '}
@@ -602,15 +613,15 @@ export default function ActiveDoughsPage() {
                       {currentStage === 'final_dough' && (
                         <div className="text-xs space-y-1.5 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <p className="font-semibold text-foreground flex items-center gap-1">
-                            <Calculator className="size-3.5 text-primary" /> Step 2: Final Mix
-                            Ingredients:
+                            <Calculator className="size-3.5 text-primary" /> Step 2: Remaining
+                            Ingredients
                           </p>
                           <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
                             <div className="col-span-2 space-y-1 bg-background/50 p-2 rounded border">
-                              <p className="text-[11px] font-semibold text-foreground">
+                              <p className="text-[12px] font-semibold text-foreground">
                                 Remaining Flour Breakdown:
                               </p>
-                              <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                              <div className="grid grid-cols-2 gap-1 text-[12px] text-muted-foreground">
                                 {res.remaining00Flour > 0 && (
                                   <p>
                                     Type 00:{' '}
@@ -688,8 +699,8 @@ export default function ActiveDoughsPage() {
                             <p className="font-semibold text-foreground flex items-center gap-1">
                               <Clock className="size-3.5 text-primary" /> Step 3: Bulk Ferment
                             </p>
-                            <Badge variant="secondary" className="text-[10px]">
-                              Active Fermentation
+                            <Badge variant="secondary" className="text-[12px]">
+                              Bulk Cold Fermentation
                             </Badge>
                           </div>
                           <p className="text-muted-foreground leading-relaxed">
@@ -698,7 +709,7 @@ export default function ActiveDoughsPage() {
                           </p>
                           {!dough.bulkStarted && !dough.bulkCompleted && (
                             <div className="pt-2 border-t border-border/60">
-                              <p className="text-[11px] font-medium text-foreground mb-1.5">
+                              <p className="text-[12px] font-medium text-foreground mb-1.5">
                                 Select bulk fermentation duration to start timer:
                               </p>
                               <div className="flex gap-2">
@@ -724,10 +735,10 @@ export default function ActiveDoughsPage() {
                         <div className="text-xs space-y-3 bg-muted/40 p-3 rounded-md border animate-in fade-in-50">
                           <div className="flex items-center justify-between">
                             <p className="font-semibold text-foreground flex items-center gap-1">
-                              <Layers className="size-3.5 text-primary" /> Step 4: Balled Ferment
+                              <Layers className="size-3.5 text-primary" /> Step 4: Dough Balling
                             </p>
                             <Badge variant="secondary" className="text-[10px]">
-                              Portioned Balls
+                              Cold Balled Fermentation
                             </Badge>
                           </div>
                           <p className="text-muted-foreground leading-relaxed">
@@ -737,7 +748,7 @@ export default function ActiveDoughsPage() {
                           </p>
                           {!dough.ballFermentStarted && !dough.ballFermentCompleted && (
                             <div className="pt-2 border-t border-border/60">
-                              <p className="text-[11px] font-medium text-foreground mb-1.5">
+                              <p className="text-[12px] font-medium text-foreground mb-1.5">
                                 Select ball fermentation duration to start timer:
                               </p>
                               <div className="flex gap-2">
@@ -934,7 +945,7 @@ export default function ActiveDoughsPage() {
                     {currentStage === 'preferment' && dough.prefermentCompleted ? (
                       <Badge
                         variant="outline"
-                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[12px] gap-1"
                       >
                         <CheckCircle2 className="size-3" /> {dough.prefermentDuration || 13}h
                         Fermentation Complete
@@ -954,7 +965,7 @@ export default function ActiveDoughsPage() {
                     {currentStage === 'final_dough' && dough.finalDoughCompleted ? (
                       <Badge
                         variant="outline"
-                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[12px] gap-1"
                       >
                         <CheckCircle2 className="size-3" /> Final Mix Complete
                       </Badge>
@@ -963,7 +974,7 @@ export default function ActiveDoughsPage() {
                     {currentStage === 'bulk' && dough.bulkCompleted ? (
                       <Badge
                         variant="outline"
-                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[12px] gap-1"
                       >
                         <CheckCircle2 className="size-3" /> {dough.bulkDuration || 48}h Bulk
                         Fermentation Complete
@@ -980,7 +991,7 @@ export default function ActiveDoughsPage() {
                     {currentStage === 'ball_ferment' && dough.ballFermentCompleted ? (
                       <Badge
                         variant="outline"
-                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[12px] gap-1"
                       >
                         <CheckCircle2 className="size-3" /> {dough.ballFermentDuration || 24}h Ball
                         Fermentation Complete
@@ -1000,7 +1011,7 @@ export default function ActiveDoughsPage() {
                     {currentStage === 'room_rest' && dough.roomRestCompleted ? (
                       <Badge
                         variant="outline"
-                        className="text-green-600 border-green-200 bg-green-50/50 text-[11px] gap-1"
+                        className="text-green-600 border-green-200 bg-green-50/50 text-[12px] gap-1"
                       >
                         <CheckCircle2 className="size-3" /> 3h Room Rest Complete
                       </Badge>
@@ -1019,94 +1030,115 @@ export default function ActiveDoughsPage() {
       )}
 
       {/* Confirmation Modal for Preferment Completion */}
-      {confirmModalDoughId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
-          <div className="bg-card border rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
-            <div className="flex items-center gap-3 text-primary">
-              <AlertCircle className="size-6" />
-              <h3 className="text-lg font-semibold text-foreground">Confirm Preferment Stage</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
+      <AlertDialog
+        open={Boolean(confirmModalDoughId)}
+        onOpenChange={open => !open && setConfirmModalDoughId(null)}
+      >
+        <AlertDialogContent size="sm" className="text-center p-0 overflow-hidden">
+          <div className="p-6 space-y-2">
+            <AlertDialogTitle className="text font-semibold normal-case tracking-normal">
+              Confirm preferment stage
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-muted-foreground normal-case leading-relaxed">
               Are you sure the preferment is fully matured and ready? Moving forward will transition
               to Step 2 (Final Mix).
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmModalDoughId(null)}>
-                No, Stay Here
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
+            </AlertDialogDescription>
+          </div>
+          <div className="flex border-t border-border p-3 gap-2 bg-muted/30">
+            <AlertDialogCancel
+              className="flex-1 mt-0 normal-case bg-white"
+              onClick={() => setConfirmModalDoughId(null)}
+            >
+              No, stay here
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="flex-1 mt-0 normal-case"
+              onClick={() => {
+                if (confirmModalDoughId) {
                   updateStage(confirmModalDoughId, 'final_dough')
                   setConfirmModalDoughId(null)
-                }}
-              >
-                Yes, Move Forward
-              </Button>
-            </div>
+                }
+              }}
+            >
+              Yes, move forward
+            </AlertDialogAction>
           </div>
-        </div>
-      )}
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmation Modal for Bulk Fermentation Completion */}
-      {bulkConfirmModalDoughId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
-          <div className="bg-card border rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
-            <div className="flex items-center gap-3 text-primary">
-              <AlertCircle className="size-6" />
-              <h3 className="text-lg font-semibold text-foreground">Confirm Bulk Fermentation</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
+      <AlertDialog
+        open={Boolean(bulkConfirmModalDoughId)}
+        onOpenChange={open => !open && setBulkConfirmModalDoughId(null)}
+      >
+        <AlertDialogContent size="sm" className="text-center p-0 overflow-hidden">
+          <div className="p-6 space-y-2">
+            <AlertDialogTitle className="text-lg font-semibold normal-case tracking-normal">
+              Confirm bulk fermentation
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text text-muted-foreground normal-case leading-relaxed">
               Are you sure bulk fermentation is complete? Moving forward will transition to Step 4
               (Balled Ferment).
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setBulkConfirmModalDoughId(null)}>
-                No, Stay Here
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
+            </AlertDialogDescription>
+          </div>
+          <div className="flex border-t border-border p-3 gap-2 bg-muted/30">
+            <AlertDialogCancel
+              className="flex-1 mt-0 normal-case bg-white"
+              onClick={() => setBulkConfirmModalDoughId(null)}
+            >
+              No, stay here
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="flex-1 mt-0 normal-case"
+              onClick={() => {
+                if (bulkConfirmModalDoughId) {
                   updateStage(bulkConfirmModalDoughId, 'ball_ferment')
                   setBulkConfirmModalDoughId(null)
-                }}
-              >
-                Yes, Move Forward
-              </Button>
-            </div>
+                }
+              }}
+            >
+              Yes, move forward
+            </AlertDialogAction>
           </div>
-        </div>
-      )}
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmation Modal for Ball Fermentation Completion */}
-      {ballConfirmModalDoughId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in-0">
-          <div className="bg-card border rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 space-y-4">
-            <div className="flex items-center gap-3 text-primary">
-              <AlertCircle className="size-6" />
-              <h3 className="text-lg font-semibold text-foreground">Confirm Ball Fermentation</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
+      <AlertDialog
+        open={Boolean(ballConfirmModalDoughId)}
+        onOpenChange={open => !open && setBallConfirmModalDoughId(null)}
+      >
+        <AlertDialogContent size="sm" className="text-center p-0 overflow-hidden">
+          <div className="p-6 space-y-2">
+            <AlertDialogTitle className="text-lg font-semibold normal-case tracking-normal">
+              Confirm ball fermentation
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text text-muted-foreground normal-case leading-relaxed">
               Are you sure ball fermentation is complete? Moving forward will transition to Step 5
               (Room Rest).
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setBallConfirmModalDoughId(null)}>
-                No, Stay Here
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
+            </AlertDialogDescription>
+          </div>
+          <div className="flex border-t border-border p-3 gap-2 bg-muted/30">
+            <AlertDialogCancel
+              className="flex-1 mt-0 normal-case bg-white"
+              onClick={() => setBallConfirmModalDoughId(null)}
+            >
+              No, stay here
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="flex-1 mt-0 normal-case"
+              onClick={() => {
+                if (ballConfirmModalDoughId) {
                   updateStage(ballConfirmModalDoughId, 'room_rest')
                   setBallConfirmModalDoughId(null)
-                }}
-              >
-                Yes, Move Forward
-              </Button>
-            </div>
+                }
+              }}
+            >
+              Yes, move forward
+            </AlertDialogAction>
           </div>
-        </div>
-      )}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

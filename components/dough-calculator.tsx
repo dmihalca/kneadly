@@ -318,13 +318,13 @@ export default function DoughCalculator() {
 
   return (
     <div className="px-4 lg:px-6 pb-12 space-y-6">
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Dough Calculator</p>
-          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+          <p className="text-sm font-medium text-muted-foreground mb-2">Dough Calculator</p>
+          <h2 className="text-2xl font-bold tracking-tight md:text-2xl">
             {presetDisplayName} Dough
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             Configure your batch parameters using standard form fields.
           </p>
         </div>
@@ -335,37 +335,38 @@ export default function DoughCalculator() {
         </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Calculator</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-6">
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <p className="font-medium">{presetDisplayName} Style Recipe</p>
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
-                  <span className="text-xs text-muted-foreground">Hydration</span>
-                  <p className="font-medium">{hydration}%</p>
-                </div>
-                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
-                  <span className="text-xs text-muted-foreground">Salt</span>
-                  <p className="font-medium">{saltPercent}%</p>
-                </div>
-                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
-                  <span className="text-xs text-muted-foreground">Oil</span>
-                  <p className="font-medium">{oilPercent}%</p>
-                </div>
-                <div className="rounded-md border border-primary/20 bg-primary/10 p-2">
-                  <span className="text-xs text-muted-foreground">Yeast</span>
-                  <p className="font-medium">{yeastPercent}%</p>
-                </div>
+            <p className="font-semibold text-xs mb-2">Recipe Overview</p>
+            <div className="mt-2 grid grid-cols-5 gap-4 ">
+              <div className="rounded-md border bg-muted/30 p-2">
+                <span className="text-xs text-muted-foreground">Hydration</span>
+                <p className="font-medium">{hydration}%</p>
+              </div>
+              <div className="rounded-md border bg-muted/30 p-2">
+                <span className="text-xs text-muted-foreground">Salt</span>
+                <p className="font-medium">{saltPercent}%</p>
+              </div>
+              <div className="rounded-md border bg-muted/30 p-2">
+                <span className="text-xs text-muted-foreground">Oil</span>
+                <p className="font-medium">{oilPercent}%</p>
+              </div>
+              <div className="rounded-md border bg-muted/30 p-2">
+                <span className="text-xs text-muted-foreground">Yeast</span>
+                <p className="font-medium">{yeastPercent}%</p>
+              </div>
+              <div className="rounded-md border bg-muted/30 p-2">
+                <span className="text-xs text-muted-foreground">Preferment</span>
+                <p className="font-medium">50%</p>
               </div>
             </div>
+          </CardContent>
 
+          <CardContent className="space-y-6">
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="balls">Number of Dough Balls</Label>
+                <Label htmlFor="balls">Dough Ball Amount (qty)</Label>
                 <Input
                   id="balls"
                   type="number"
@@ -375,7 +376,7 @@ export default function DoughCalculator() {
                   onChange={e => setBalls(e.target.value === '' ? null : Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Total quantity of individual dough portions.
+                  Total number of dough balls you want to prepare.
                 </p>
               </div>
 
@@ -392,13 +393,13 @@ export default function DoughCalculator() {
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  Standard target weight per individual ball.
+                  Target weight for each individual dough ball.
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 mb-2">
                 <Label>Preferment Type</Label>
                 <Tabs
                   value={preferment}
@@ -410,14 +411,24 @@ export default function DoughCalculator() {
                     }
                   }}
                 >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="biga">Biga</TabsTrigger>
-                    <TabsTrigger value="poolish">Poolish</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 rounded-md border bg-muted/30 p-1">
+                    <TabsTrigger
+                      className="rounded-sm! data-active:bg-white! data-active:shadow-xs data-active:border data-active:border-primary/5"
+                      value="biga"
+                    >
+                      Biga
+                    </TabsTrigger>
+                    <TabsTrigger
+                      className="rounded-sm! data-active:bg-white! data-active:shadow-xs data-active:border data-active:border-primary/5"
+                      value="poolish"
+                    >
+                      Poolish
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
 
-              <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="rounded-lg border bg-muted/30 p-4 mt-0 mb-6">
                 <p className="font-medium capitalize">{preferment}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Uses 50% of total flour with 00 flour only. Hydration:{' '}
@@ -442,8 +453,6 @@ export default function DoughCalculator() {
                 </p>
               </div>
             </div>
-
-            <Separator />
 
             <div className="space-y-4">
               <Label>Flour Blend (Percentages)</Label>
@@ -522,8 +531,6 @@ export default function DoughCalculator() {
               </div>
             </div>
 
-            <Separator />
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
@@ -538,7 +545,7 @@ export default function DoughCalculator() {
                     className="pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Target baking completion date.</p>
+                <p className="text-xs text-muted-foreground">Target date for making the dough.</p>
               </div>
 
               <div className="space-y-2">
@@ -554,7 +561,7 @@ export default function DoughCalculator() {
                     className={`pl-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 ${!date ? 'opacity-50' : ''}`}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Target baking completion time.</p>
+                <p className="text-xs text-muted-foreground">Target time for making the dough.</p>
               </div>
             </div>
 
@@ -572,62 +579,6 @@ export default function DoughCalculator() {
             </Button>
           </CardContent>
         </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recipe Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Hydration</p>
-                  <p className="mt-1 text-xl font-semibold">{hydration}%</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Salt</p>
-                  <p className="mt-1 text-xl font-semibold">{saltPercent}%</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Oil</p>
-                  <p className="mt-1 text-xl font-semibold">{oilPercent}%</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Preferment</p>
-                  <p className="mt-1 text-xl font-semibold">50%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {results && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Biga Start Window</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between gap-4 text-sm">
-                  <span>Earliest (14h)</span>
-                  <strong>
-                    {results.earliest ? format(results.earliest, 'MMM d, yyyy @ HH:mm') : '—'}
-                  </strong>
-                </div>
-                <div className="flex items-center justify-between gap-4 text-sm">
-                  <span>Target (13h)</span>
-                  <strong>
-                    {results.target ? format(results.target, 'MMM d, yyyy @ HH:mm') : '—'}
-                  </strong>
-                </div>
-                <div className="flex items-center justify-between gap-4 text-sm">
-                  <span>Latest (12h)</span>
-                  <strong>
-                    {results.latest ? format(results.latest, 'MMM d, yyyy @ HH:mm') : '—'}
-                  </strong>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
       </div>
 
       {results && (
@@ -714,6 +665,30 @@ export default function DoughCalculator() {
                   </span>
                 </p>
               </div>
+
+              <CardHeader>
+                <CardTitle>Biga Start Window</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span>Earliest (14h)</span>
+                  <strong>
+                    {results.earliest ? format(results.earliest, 'MMM d, yyyy @ HH:mm') : '—'}
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span>Target (13h)</span>
+                  <strong>
+                    {results.target ? format(results.target, 'MMM d, yyyy @ HH:mm') : '—'}
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span>Latest (12h)</span>
+                  <strong>
+                    {results.latest ? format(results.latest, 'MMM d, yyyy @ HH:mm') : '—'}
+                  </strong>
+                </div>
+              </CardContent>
 
               <Separator />
 
