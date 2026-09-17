@@ -533,10 +533,45 @@ export default function ActiveDoughsPage() {
                             </Button>
                           </div>
                           <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
-                            <p>
-                              Remaining Flour:{' '}
-                              <span className="font-medium text-foreground">{finalFlour} g</span>
-                            </p>
+                            <div className="col-span-2 space-y-1 bg-background/50 p-2 rounded border">
+                              <p className="text-[11px] font-semibold text-foreground">
+                                Remaining Flour Breakdown:
+                              </p>
+                              <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                                {res.remaining00Flour > 0 && (
+                                  <p>
+                                    Type 00:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remaining00Flour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingBreadFlour > 0 && (
+                                  <p>
+                                    Bread Flour:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingBreadFlour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingWholeFlour > 0 && (
+                                  <p>
+                                    Whole Flour:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingWholeFlour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingWholeGrain > 0 && (
+                                  <p>
+                                    Whole Grain:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingWholeGrain} g
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                             <p>
                               Remaining Water:{' '}
                               <span className="font-medium text-foreground">{finalWater} g</span>
@@ -571,10 +606,45 @@ export default function ActiveDoughsPage() {
                             Ingredients:
                           </p>
                           <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
-                            <p>
-                              Remaining Flour:{' '}
-                              <span className="font-medium text-foreground">{finalFlour} g</span>
-                            </p>
+                            <div className="col-span-2 space-y-1 bg-background/50 p-2 rounded border">
+                              <p className="text-[11px] font-semibold text-foreground">
+                                Remaining Flour Breakdown:
+                              </p>
+                              <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                                {res.remaining00Flour > 0 && (
+                                  <p>
+                                    Type 00:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remaining00Flour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingBreadFlour > 0 && (
+                                  <p>
+                                    Bread Flour:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingBreadFlour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingWholeFlour > 0 && (
+                                  <p>
+                                    Whole Flour:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingWholeFlour} g
+                                    </span>
+                                  </p>
+                                )}
+                                {res.remainingWholeGrain > 0 && (
+                                  <p>
+                                    Whole Grain:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {res.remainingWholeGrain} g
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                             <p>
                               Remaining Water:{' '}
                               <span className="font-medium text-foreground">{finalWater} g</span>
